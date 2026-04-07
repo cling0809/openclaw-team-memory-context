@@ -1,0 +1,3726 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * 不良人总谱工作台 · 整站样式覆写 (Tranche 14)
+ * T2: 统一三栏壳体 + 暗桩台网格化
+ * T4: 运行状态条 + 团队消息分层
+ * T5: 暗桩台内容填充
+ * T6: 全站令牌整合 (设计令牌一体化)
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── §1 设计令牌 · 深色 (玄墨沉浸) ─────────────────────────────────── */
+:root {
+	/* 品牌 · 不良人六色 (不随主题变化) */
+	--buli-brand-xuanmo:   #0b1020;
+	--buli-brand-liujin:   #c9a84c;
+	--buli-brand-liujin-2: #e0bf68;
+	--buli-brand-xuesha:   #8b0000;
+	--buli-brand-xuesha-2: #a52a2a;
+	--buli-brand-qingdai:  #2d4a3e;
+	--buli-brand-zhuqing:  #3a5f4b;
+	--buli-brand-lingpai:  #4a3728;
+	--buli-brand-mijuan:   #f5f0e6;
+	--buli-brand-mijuan-2: #ebe3d5;
+
+	/* 旧名别名 (品牌向后兼容) */
+	--buli-xuanmo: #0b1020;
+	--buli-xuanmo-2: #11182b;
+	--buli-liujin: #c9a84c;
+	--buli-liujin-2: #e0bf68;
+	--buli-xuesha: #8b0000;
+	--buli-xuesha-2: #a52a2a;
+	--buli-qingdai: #2d4a3e;
+	--buli-zhuqing: #3a5f4b;
+	--buli-zhuyin: #a52a2a;
+
+	/* 字体 */
+	--buli-font-title: "Inter", "Noto Sans SC", system-ui, sans-serif;
+	--buli-font-body:  "Inter", "Noto Sans SC", system-ui, sans-serif;
+	--buli-font-mono:  ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code", Menlo, monospace;
+
+	/* 圆角 */
+	--buli-radius-xs:  3px;
+	--buli-radius-sm:  6px;
+	--buli-radius-md:  10px;
+	--buli-radius-lg:  14px;
+	--buli-radius-pill: 999px;
+
+	/* 间距 */
+	--buli-space-1: 4px;  --buli-space-2: 8px;  --buli-space-3: 12px;
+	--buli-space-4: 16px; --buli-space-6: 24px; --buli-space-8: 32px;
+
+	/* 字号 */
+	--buli-text-xs: 10px;  --buli-text-sm: 11px;   --buli-text-md: 12px;
+	--buli-text-base: 13px; --buli-text-lg: 14px;   --buli-text-xl: 16px;
+
+	/* 动效 */
+	--buli-transition-fast:   120ms ease;
+	--buli-transition-normal: 200ms ease;
+
+	/* ── 深色模式语义令牌 ── */
+	/* 背景层级 */
+	--buli-bg:           #0b1020;
+	--buli-bg-elevated:  #0e1426;
+	--buli-bg-surface:   #11182b;
+	--buli-bg-surface-2: #151d31;
+	--buli-bg-hover:     #17203a;
+	--buli-bg-active:    #1d2744;
+	--buli-bg-overlay:   rgba(11, 16, 32, 0.85);
+
+	/* 导航 */
+	--buli-nav-bg:          #0d1220;
+	--buli-nav-hover:       #141c30;
+	--buli-nav-active:      rgba(201, 168, 76, 0.12);
+	--buli-nav-text:        #8893ab;
+	--buli-nav-text-active: var(--buli-brand-liujin-2);
+
+	/* 右栏 · 机要卷宗 */
+	--buli-console-bg:     #0d1220;
+	--buli-console-border: rgba(201, 168, 76, 0.08);
+
+	/* 底部 · 暗桩台 */
+	--buli-bar-bg:     #0a0e1a;
+	--buli-bar-border: rgba(201, 168, 76, 0.06);
+
+	/* 文本 */
+	--buli-text:         #d3dae8;
+	--buli-text-strong:  #f6edd3;
+	--buli-text-2:       #9da8c0;
+	--buli-text-3:       #5a6580;
+	--buli-text-inverse: #0b1020;
+	--buli-text-accent:  var(--buli-brand-liujin-2);
+
+	/* 边框 */
+	--buli-border:        rgba(201, 168, 76, 0.08);
+	--buli-border-2:      rgba(201, 168, 76, 0.16);
+	--buli-border-strong: rgba(201, 168, 76, 0.28);
+	--buli-border-hover:  rgba(224, 191, 104, 0.42);
+
+	/* 强调/交互 */
+	--buli-accent:        var(--buli-brand-liujin);
+	--buli-accent-hover:  var(--buli-brand-liujin-2);
+	--buli-accent-subtle: rgba(201, 168, 76, 0.14);
+	--buli-accent-glow:   rgba(201, 168, 76, 0.22);
+	--buli-accent-fg:     #140f06;
+
+	/* 状态色 */
+	--buli-status-live:        #e0bf68;
+	--buli-status-live-bg:     rgba(224, 191, 104, 0.10);
+	--buli-status-live-border: rgba(224, 191, 104, 0.28);
+	--buli-status-live-glow:   rgba(224, 191, 104, 0.40);
+
+	--buli-status-queue:        #5a7a8a;
+	--buli-status-queue-bg:     rgba(90, 122, 138, 0.08);
+	--buli-status-queue-border: rgba(90, 122, 138, 0.18);
+
+	--buli-status-done:        #4aa36f;
+	--buli-status-done-bg:     rgba(74, 163, 111, 0.10);
+	--buli-status-done-border: rgba(74, 163, 111, 0.25);
+
+	--buli-status-fail:        #c04a4a;
+	--buli-status-fail-bg:     rgba(192, 74, 74, 0.12);
+	--buli-status-fail-border: rgba(192, 74, 74, 0.28);
+
+	--buli-status-timeout:     #6b778f;
+	--buli-status-timeout-bg:  rgba(107, 119, 143, 0.08);
+	--buli-status-abort:       #8b7fa0;
+	--buli-status-abort-bg:    rgba(139, 127, 160, 0.08);
+	--buli-status-idle:        #5a6580;
+
+	/* 工具流 */
+	--buli-tool-bg:     rgba(201, 168, 76, 0.04);
+	--buli-tool-border: rgba(201, 168, 76, 0.15);
+	--buli-tool-text:   rgba(224, 191, 104, 0.55);
+	--buli-tool-active: rgba(201, 168, 76, 0.10);
+
+	/* 信息/警告 */
+	--buli-info:    #7ba7ff;
+	--buli-info-bg: rgba(123, 167, 255, 0.08);
+	--buli-warn:    #d0923d;
+	--buli-warn-bg: rgba(208, 146, 61, 0.08);
+
+	/* 阴影 */
+	--buli-shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.25);
+	--buli-shadow-md:   0 4px 12px rgba(0, 0, 0, 0.30);
+	--buli-shadow-lg:   0 12px 32px rgba(0, 0, 0, 0.35);
+	--buli-shadow-glow: 0 0 12px rgba(201, 168, 76, 0.15);
+
+	/* Tab 签牌 */
+	--buli-tab-bg:            transparent;
+	--buli-tab-active-bg:     rgba(201, 168, 76, 0.12);
+	--buli-tab-active-text:   var(--buli-brand-liujin-2);
+	--buli-tab-active-border: var(--buli-brand-liujin);
+	--buli-tab-hover-bg:      rgba(201, 168, 76, 0.06);
+	--buli-tab-text:          #6b778f;
+
+	/* 卡片 */
+	--buli-card-bg:           rgba(17, 24, 43, 0.60);
+	--buli-card-border:       rgba(201, 168, 76, 0.08);
+	--buli-card-hover-bg:     rgba(23, 32, 58, 0.60);
+	--buli-card-hover-border: rgba(201, 168, 76, 0.20);
+
+	/* 输入 */
+	--buli-input-bg:     rgba(17, 24, 43, 0.50);
+	--buli-input-border: rgba(201, 168, 76, 0.12);
+	--buli-input-focus:  rgba(201, 168, 76, 0.25);
+
+	/* 滚动条 */
+	--buli-scrollbar-track: transparent;
+	--buli-scrollbar-thumb: rgba(201, 168, 76, 0.16);
+	--buli-scrollbar-hover: rgba(201, 168, 76, 0.30);
+
+	/* 席位状态签牌 */
+	--buli-badge-live-bg:    rgba(224, 191, 104, 0.12);
+	--buli-badge-live-text:  #e0bf68;
+	--buli-badge-done-bg:    rgba(74, 163, 111, 0.12);
+	--buli-badge-done-text:  #4aa36f;
+	--buli-badge-fail-bg:    rgba(192, 74, 74, 0.12);
+	--buli-badge-fail-text:  #c04a4a;
+	--buli-badge-queue-bg:   rgba(90, 122, 138, 0.10);
+	--buli-badge-queue-text: #5a7a8a;
+	--buli-badge-idle-bg:    rgba(90, 101, 128, 0.10);
+	--buli-badge-idle-text:  #5a6580;
+
+	/* ── Lit 应用向后兼容令牌 (不可删除) ── */
+	--bg: #0b1020;
+	--bg-accent: #0e1426;
+	--bg-elevated: #11182b;
+	--bg-hover: #17203a;
+	--bg-muted: #151d31;
+	--card: #11182b;
+	--panel: #0d1220;
+	--panel-strong: #11182b;
+	--panel-hover: #17203a;
+	--chrome: rgba(13, 18, 32, 0.92);
+	--chrome-strong: rgba(13, 18, 32, 0.98);
+	--text: #d3dae8;
+	--text-strong: #f6edd3;
+	--chat-text: #d7deeb;
+	--muted: #8893ab;
+	--muted-strong: #9da8c0;
+	--border: rgba(201, 168, 76, 0.12);
+	--border-strong: rgba(201, 168, 76, 0.28);
+	--border-hover: rgba(224, 191, 104, 0.42);
+	--input: rgba(201, 168, 76, 0.14);
+	--ring: #c9a84c;
+	--accent: #c9a84c;
+	--accent-hover: #e0bf68;
+	--accent-muted: #c9a84c;
+	--accent-subtle: rgba(201, 168, 76, 0.14);
+	--accent-foreground: #140f06;
+	--accent-glow: rgba(201, 168, 76, 0.22);
+	--primary: #c9a84c;
+	--primary-foreground: #140f06;
+	--secondary: #151d31;
+	--secondary-foreground: #e8ddbe;
+	--info: #7ba7ff;
+	--ok: #4aa36f;
+	--warn: #d0923d;
+	--danger: #b8544f;
+	--focus: rgba(201, 168, 76, 0.18);
+	--focus-ring: 0 0 0 2px var(--bg), 0 0 0 3px rgba(201, 168, 76, 0.45);
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+	--shadow-md: 0 8px 24px rgba(0, 0, 0, 0.28);
+	--shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.34);
+
+	/* 旧组件向后兼容 */
+	--buli-card: #1c1c30;
+	--buli-card-hover: #22263a;
+	--buli-live-bg: rgba(224, 191, 104, 0.10);
+}
+
+/* ── §2 设计令牌 · 浅色 (温润卷宗) ─────────────────────────────────── */
+@media (prefers-color-scheme: light) {
+	:root {
+		/* 背景 */
+		--buli-bg: #f8f4ec;
+		--buli-bg-elevated: #f2ece0;
+		--buli-bg-surface: #faf7f0;
+		--buli-bg-surface-2: #f5f0e6;
+		--buli-bg-hover: #ede7da;
+		--buli-bg-active: #e8e0d0;
+		--buli-bg-overlay: rgba(248, 244, 236, 0.88);
+
+		/* 导航 */
+		--buli-nav-bg: #f0ebe0;
+		--buli-nav-hover: #e8e1d4;
+		--buli-nav-active: rgba(140, 110, 50, 0.12);
+		--buli-nav-text: #8b7a62;
+		--buli-nav-text-active: #6b4c20;
+
+		/* 右栏 */
+		--buli-console-bg: #faf7f0;
+		--buli-console-border: rgba(140, 110, 50, 0.12);
+
+		/* 暗桩台 */
+		--buli-bar-bg: #f2ece0;
+		--buli-bar-border: rgba(140, 110, 50, 0.10);
+
+		/* 文本 */
+		--buli-text: #2d2014;
+		--buli-text-strong: #1a1008;
+		--buli-text-2: #6b5a42;
+		--buli-text-3: #9c8a6e;
+		--buli-text-inverse: #faf7f0;
+		--buli-text-accent: #7a5c28;
+
+		/* 边框 */
+		--buli-border: rgba(140, 110, 50, 0.10);
+		--buli-border-2: rgba(140, 110, 50, 0.18);
+		--buli-border-strong: rgba(140, 110, 50, 0.30);
+		--buli-border-hover: rgba(140, 110, 50, 0.45);
+
+		/* 强调/交互 */
+		--buli-accent: #8c6e32;
+		--buli-accent-hover: #7a5c28;
+		--buli-accent-subtle: rgba(140, 110, 50, 0.10);
+		--buli-accent-glow: rgba(140, 110, 50, 0.15);
+		--buli-accent-fg: #faf7f0;
+
+		/* 状态色 */
+		--buli-status-live: #8c6e32;
+		--buli-status-live-bg: rgba(140, 110, 50, 0.08);
+		--buli-status-live-border: rgba(140, 110, 50, 0.22);
+		--buli-status-live-glow: rgba(140, 110, 50, 0.25);
+		--buli-status-queue: #9c8a6e;
+		--buli-status-queue-bg: rgba(156, 138, 110, 0.08);
+		--buli-status-done: #2d7a4a;
+		--buli-status-done-bg: rgba(45, 122, 74, 0.08);
+		--buli-status-fail: #a0362e;
+		--buli-status-fail-bg: rgba(160, 54, 46, 0.08);
+		--buli-status-timeout: #8b7a62;
+		--buli-status-abort: #9a8878;
+		--buli-status-idle: #9c8a6e;
+
+		/* 工具流 */
+		--buli-tool-bg: rgba(140, 110, 50, 0.04);
+		--buli-tool-border: rgba(140, 110, 50, 0.15);
+		--buli-tool-text: rgba(107, 90, 66, 0.65);
+
+		/* 阴影 */
+		--buli-shadow-sm: 0 1px 3px rgba(100, 80, 40, 0.08);
+		--buli-shadow-md: 0 4px 12px rgba(100, 80, 40, 0.10);
+		--buli-shadow-lg: 0 12px 32px rgba(100, 80, 40, 0.12);
+
+		/* Tab */
+		--buli-tab-active-bg: rgba(140, 110, 50, 0.10);
+		--buli-tab-active-text: #6b4c20;
+		--buli-tab-text: #9c8a6e;
+
+		/* 卡片 */
+		--buli-card-bg: rgba(250, 247, 240, 0.70);
+		--buli-card-border: rgba(140, 110, 50, 0.10);
+		--buli-card-hover-bg: rgba(237, 231, 218, 0.70);
+
+		/* 席位签牌 */
+		--buli-badge-live-bg: rgba(140, 110, 50, 0.10);
+		--buli-badge-live-text: #8c6e32;
+		--buli-badge-done-bg: rgba(45, 122, 74, 0.10);
+		--buli-badge-done-text: #2d7a4a;
+		--buli-badge-fail-bg: rgba(160, 54, 46, 0.10);
+		--buli-badge-fail-text: #a0362e;
+		--buli-badge-queue-bg: rgba(156, 138, 110, 0.08);
+		--buli-badge-queue-text: #9c8a6e;
+
+		/* 向后兼容 */
+		--buli-card: #fffdf8;
+		--buli-card-hover: #faf5ec;
+		--buli-live-bg: rgba(140, 110, 50, 0.08);
+
+		/* Lit 应用向后兼容 */
+		--bg: #f8f4ec;
+		--bg-accent: #f2ece0;
+		--bg-elevated: #faf7f0;
+		--bg-hover: #ede7da;
+		--bg-muted: #f5f0e6;
+		--card: #faf7f0;
+		--panel: #f0ebe0;
+		--panel-strong: #f5f0e6;
+		--panel-hover: #ede7da;
+		--chrome: rgba(242, 236, 224, 0.94);
+		--chrome-strong: rgba(240, 235, 224, 0.98);
+		--text: #2d2014;
+		--text-strong: #1a1008;
+		--chat-text: #2d2014;
+		--muted: #8b7a62;
+		--muted-strong: #6b5a42;
+		--border: rgba(140, 110, 50, 0.12);
+		--border-strong: rgba(140, 110, 50, 0.30);
+		--border-hover: rgba(140, 110, 50, 0.45);
+		--input: rgba(140, 110, 50, 0.10);
+		--ring: #8c6e32;
+		--accent: #8c6e32;
+		--accent-hover: #7a5c28;
+		--accent-muted: #8c6e32;
+		--accent-subtle: rgba(140, 110, 50, 0.10);
+		--accent-foreground: #faf7f0;
+		--accent-glow: rgba(140, 110, 50, 0.15);
+		--primary: #8c6e32;
+		--primary-foreground: #faf7f0;
+		--secondary: #f5f0e6;
+		--secondary-foreground: #3a2a14;
+		--info: #4a78c0;
+		--ok: #2d7a4a;
+		--warn: #b87a2a;
+		--danger: #a0362e;
+		--focus: rgba(140, 110, 50, 0.14);
+		--focus-ring: 0 0 0 2px var(--bg), 0 0 0 3px rgba(140, 110, 50, 0.40);
+		--shadow-sm: 0 1px 3px rgba(100, 80, 40, 0.08);
+		--shadow-md: 0 4px 12px rgba(100, 80, 40, 0.10);
+		--shadow-lg: 0 12px 32px rgba(100, 80, 40, 0.12);
+
+		/* 旧组件向后兼容 */
+		--buli-card: #fffdf8;
+		--buli-card-hover: #faf5ec;
+		--buli-live-bg: rgba(140, 110, 50, 0.08);
+	}
+}
+
+/* ── §3 浅色模式结构覆写 ─────────────────────────────────────────── */
+@media (prefers-color-scheme: light) {
+	body.lpt-workbench {
+		background: #f5f0e6 !important;
+	}
+	.shell {
+		background: transparent !important;
+	}
+	.topbar {
+		background: linear-gradient(180deg, rgba(242,236,224,0.96), rgba(248,244,236,0.92)) !important;
+		border-bottom-color: rgba(140, 110, 50, 0.12) !important;
+	}
+	.shell-nav {
+		background: linear-gradient(180deg, #f0ebe0, #ede7da) !important;
+		border-right-color: rgba(140, 110, 50, 0.12) !important;
+	}
+	.sidebar,
+	.sidebar-shell,
+	:root[data-theme-mode=light] .sidebar {
+		background: transparent !important;
+	}
+	.sidebar-shell__footer {
+		border-top-color: rgba(140, 110, 50, 0.12) !important;
+	}
+	.sidebar-brand__eyebrow {
+		color: rgba(140, 110, 50, 0.60) !important;
+	}
+	.nav-section__label {
+		color: rgba(140, 110, 50, 0.55) !important;
+	}
+	.nav-section__label:hover {
+		color: var(--text-strong) !important;
+		background: rgba(140, 110, 50, 0.06) !important;
+	}
+	.nav-item {
+		color: #6b5a42 !important;
+	}
+	.nav-item:hover {
+		color: var(--text-strong) !important;
+		border-color: rgba(140, 110, 50, 0.14) !important;
+		background: rgba(140, 110, 50, 0.06) !important;
+	}
+	.nav-item.active,
+	.nav-item--active {
+		color: #1a1008 !important;
+		border-color: rgba(140, 110, 50, 0.28) !important;
+		background: linear-gradient(180deg, rgba(140, 110, 50, 0.12), rgba(140, 110, 50, 0.06)) !important;
+		box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.5), 0 4px 12px rgba(100, 80, 40, 0.08) !important;
+	}
+	.nav-item.active::before,
+	.nav-item--active::before {
+		background: #8c6e32 !important;
+		box-shadow: 0 0 8px rgba(140, 110, 50, 0.25) !important;
+	}
+	.nav-item.active .nav-item__icon,
+	.nav-item--active .nav-item__icon {
+		color: #8c6e32 !important;
+	}
+	.content {
+		background: linear-gradient(180deg, rgba(248,244,236,0.3), rgba(248,244,236,0.1)) !important;
+	}
+	.chat-line.assistant .chat-bubble,
+	.chat-group.assistant .chat-bubble,
+	.chat-group.other .chat-bubble,
+	.chat-group.tool .chat-bubble {
+		background: rgba(250, 247, 240, 0.90) !important;
+		border: 1px solid rgba(140, 110, 50, 0.10) !important;
+		color: #2d2014 !important;
+	}
+	.chat-line.user .chat-bubble,
+	.chat-group.user .chat-bubble {
+		background: rgba(140, 110, 50, 0.08) !important;
+		border: 1px solid rgba(140, 110, 50, 0.16) !important;
+		color: #2d2014 !important;
+	}
+	.agent-chat__input,
+	.chat-compose,
+	.chat-composer,
+	[data-composer] {
+		border-color: rgba(140, 110, 50, 0.14) !important;
+		background: linear-gradient(180deg, rgba(250,247,240,0.96), rgba(245,240,230,0.98)) !important;
+		color: #2d2014 !important;
+	}
+	aside.right-console,
+	.right-console,
+	#buli-team-panel.buli-integrated-host {
+		border-left: 1px solid rgba(140, 110, 50, 0.12) !important;
+		background:
+			radial-gradient(ellipse at top right, rgba(140, 110, 50, 0.04), transparent 50%),
+			linear-gradient(180deg, #faf7f0, #f5f0e6) !important;
+	}
+	#buli-team-panel .buli-title {
+		color: #7a5c28 !important;
+		text-shadow: none !important;
+	}
+	#buli-team-panel .buli-subtitle {
+		color: #8b7a62 !important;
+	}
+	#buli-team-panel .buli-tab {
+		color: #9c8a6e !important;
+		background: transparent !important;
+	}
+	#buli-team-panel .buli-tab.active {
+		color: #6b4c20 !important;
+		background: rgba(140, 110, 50, 0.06) !important;
+		border-right-color: #8c6e32 !important;
+		border-bottom-color: transparent !important;
+		box-shadow: none !important;
+	}
+	#buli-team-panel .buli-tab:hover:not(.active) {
+		color: #7a5c28 !important;
+		background: rgba(140, 110, 50, 0.04) !important;
+	}
+	#buli-team-panel .buli-tab-bar {
+		background: transparent !important;
+		border-right-color: rgba(140, 110, 50, 0.12) !important;
+		border-bottom-color: transparent !important;
+	}
+	.nav-collapse-toggle,
+	.topbar-search,
+	.topbar-theme-mode,
+	.sidebar-version {
+		border-color: rgba(140, 110, 50, 0.14) !important;
+		background: rgba(250, 247, 240, 0.80) !important;
+		color: #6b5a42 !important;
+	}
+	.topbar-search:hover,
+	.nav-collapse-toggle:hover,
+	.sidebar-version:hover {
+		border-color: rgba(140, 110, 50, 0.28) !important;
+		background: rgba(245, 240, 230, 0.90) !important;
+	}
+	.topbar-theme-mode__btn--active,
+	.pill,
+	.topbar-status .pill {
+		border-color: rgba(140, 110, 50, 0.16) !important;
+		background: rgba(140, 110, 50, 0.08) !important;
+		color: #1a1008 !important;
+	}
+	.dashboard-header__breadcrumb-current,
+	.page-title,
+	.sidebar-title {
+		color: #7a5c28 !important;
+	}
+	.buli-ankuangtai {
+		background: #f0ebe0 !important;
+		border-top-color: rgba(140, 110, 50, 0.10) !important;
+	}
+	.buli-status-bar {
+		background: #f2ece0 !important;
+		border-bottom-color: rgba(140, 110, 50, 0.08) !important;
+		color: #6b5a42 !important;
+	}
+	.buli-status-bar.active {
+		background: rgba(140, 110, 50, 0.06) !important;
+		border-bottom-color: rgba(140, 110, 50, 0.14) !important;
+	}
+	.buli-status-agent {
+		color: #7a5c28 !important;
+	}
+	/* Tranche 15: Status bar pill — active subagent count */
+	.buli-status-pill {
+		display: none;
+	}
+	#buli-team-panel .buli-scroll::-webkit-scrollbar-thumb {
+		background: rgba(140, 110, 50, 0.18) !important;
+	}
+}
+
+body.lpt-workbench {
+	margin: 0 !important;
+	overflow: hidden !important;
+	background:
+		radial-gradient(circle at top left, rgba(201, 168, 76, 0.08), transparent 22%),
+		linear-gradient(180deg, #0b1020, #090d18);
+}
+
+/* P0-a-2: CSS 变量（输入框高度保护） */
+:root {
+	--lpt-composer-h: 80px;
+}
+
+/* P0-a-2: 独立面板定位（不良人总谱不良人面板保护输入框 + 移除全局 margin-right） */
+body.lpt-workbench > #buli-team-panel {
+	position: fixed !important;
+	top: 86px !important;
+	right: 14px !important;
+	bottom: var(--lpt-composer-h, 18px) !important;
+	width: min(348px, 32vw) !important;
+	min-width: 296px !important;
+	max-width: 420px !important;
+	z-index: 60 !important;
+	pointer-events: none !important;
+	margin-right: 0 !important;
+}
+
+openclaw-app {
+	min-height: 100vh;
+}
+
+.shell {
+	grid-template-columns: clamp(228px, 19vw, 264px) minmax(0, 1fr) 360px !important;
+	grid-template-rows: var(--shell-topbar-height, 58px) minmax(0, 1fr) auto !important;
+	grid-template-areas:
+		"nav topbar right-console"
+		"nav content right-console"
+		"nav ankuangtai right-console" !important;
+	background: transparent !important;
+}
+
+.topbar {
+	grid-area: topbar;
+	grid-column: 2 / 3 !important;
+	min-height: 58px;
+	padding: 0 18px;
+	border-bottom: 1px solid rgba(201, 168, 76, 0.12);
+	background: linear-gradient(180deg, rgba(13, 18, 32, 0.96), rgba(13, 18, 32, 0.88));
+	backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.shell-nav {
+	grid-area: nav;
+	border-right: 1px solid rgba(201, 168, 76, 0.12);
+	background:
+		linear-gradient(180deg, rgba(11, 16, 32, 0.98), rgba(13, 18, 32, 0.98)),
+		radial-gradient(circle at top left, rgba(201, 168, 76, 0.08), transparent 24%);
+}
+
+.sidebar,
+.sidebar-shell,
+:root[data-theme-mode=light] .sidebar {
+	background: transparent !important;
+}
+
+.sidebar-shell {
+	padding: 14px 10px 12px;
+}
+
+.sidebar-shell__footer {
+	border-top-color: rgba(201, 168, 76, 0.12);
+}
+
+.sidebar-brand__eyebrow {
+	color: rgba(224, 191, 104, 0.62);
+	letter-spacing: 0.1em;
+	font-family: "Noto Serif SC", "PingFang SC", serif;
+	font-size: 0;
+	line-height: 0;
+	overflow: hidden;
+}
+.sidebar-brand__eyebrow::after {
+	content: "天罡谱";
+	font-size: 11px;
+	line-height: normal;
+}
+
+.sidebar-brand__title {
+	color: var(--text-strong);
+	font-family: "Noto Serif SC", "PingFang SC", serif;
+	font-size: 0;
+	line-height: 0;
+	overflow: hidden;
+}
+.sidebar-brand__title::after {
+	content: "不良人总谱";
+	font-size: 16px;
+	line-height: normal;
+}
+
+.nav-section__label {
+	min-height: 30px;
+	color: rgba(224, 191, 104, 0.56);
+}
+
+.nav-section__label:hover {
+	color: var(--text-strong);
+	background: rgba(201, 168, 76, 0.06);
+}
+
+.nav-section__label-text {
+	letter-spacing: 0.08em;
+	font-size: 11px;
+	font-family: "Noto Serif SC", "PingFang SC", serif;
+}
+
+.nav-item {
+	min-height: 42px;
+	border-radius: 12px;
+	color: #9ea9c1;
+}
+
+.nav-item:hover {
+	color: var(--text-strong);
+	border-color: rgba(201, 168, 76, 0.14);
+	background: rgba(201, 168, 76, 0.08);
+}
+
+.nav-item.active,
+.nav-item--active {
+	color: var(--text-strong);
+	border-color: rgba(201, 168, 76, 0.28);
+	background: linear-gradient(180deg, rgba(201, 168, 76, 0.18), rgba(201, 168, 76, 0.08));
+	box-shadow: inset 0 1px 0 rgba(255, 242, 208, 0.1), 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.nav-item.active::before,
+.nav-item--active::before {
+	content: "";
+	position: absolute;
+	top: 9px;
+	bottom: 9px;
+	left: 6px;
+	width: 3px;
+	border-radius: 999px;
+	background: var(--buli-liujin);
+	box-shadow: 0 0 16px rgba(201, 168, 76, 0.35);
+}
+
+.nav-item__icon {
+	opacity: 0.9;
+}
+
+.nav-item.active .nav-item__icon,
+.nav-item--active .nav-item__icon {
+	color: var(--buli-liujin);
+}
+
+.nav-item__text {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.nav-collapse-toggle,
+.topbar-search,
+.topbar-theme-mode,
+.sidebar-version {
+	border-color: rgba(201, 168, 76, 0.16) !important;
+	background: rgba(17, 24, 43, 0.72) !important;
+}
+
+.topbar-search:hover,
+.nav-collapse-toggle:hover,
+.sidebar-version:hover {
+	border-color: rgba(224, 191, 104, 0.28) !important;
+	background: rgba(23, 32, 58, 0.88) !important;
+}
+
+.topbar-theme-mode__btn--active,
+.pill,
+.topbar-status .pill {
+	border-color: rgba(201, 168, 76, 0.18);
+	background: rgba(201, 168, 76, 0.12);
+	color: var(--text-strong);
+}
+
+.dashboard-header__breadcrumb-current,
+.page-title,
+.sidebar-title {
+	color: var(--buli-liujin) !important;
+}
+
+.content {
+	grid-area: content;
+	padding: 10px 18px 0;
+	background: linear-gradient(180deg, rgba(10, 14, 26, 0.32), rgba(10, 14, 26, 0.1));
+}
+
+.chat-thread {
+	padding: 0 10px 14px;
+}
+
+.chat-line.assistant .chat-bubble,
+.chat-group.assistant .chat-bubble,
+.chat-group.other .chat-bubble,
+.chat-group.tool .chat-bubble {
+	background: rgba(17, 24, 43, 0.88);
+	border: 1px solid rgba(201, 168, 76, 0.1);
+}
+
+.chat-line.user .chat-bubble,
+.chat-group.user .chat-bubble {
+	background: rgba(201, 168, 76, 0.12);
+	border: 1px solid rgba(201, 168, 76, 0.22);
+}
+
+.agent-chat__input,
+.chat-compose,
+.chat-composer,
+[data-composer] {
+	border-color: rgba(201, 168, 76, 0.14) !important;
+	background: linear-gradient(180deg, rgba(17, 24, 43, 0.94), rgba(13, 18, 32, 0.98)) !important;
+}
+
+aside.right-console,
+.right-console,
+#buli-team-panel.buli-integrated-host {
+	grid-area: right-console;
+	grid-row: 1 / -1;
+	width: 360px !important;
+	min-width: 360px !important;
+	border-left: 1px solid rgba(201, 168, 76, 0.18) !important;
+	background:
+		radial-gradient(ellipse at top right, rgba(201, 168, 76, 0.06), transparent 50%),
+		linear-gradient(180deg, rgba(11, 16, 32, 0.99), rgba(9, 13, 24, 0.99)) !important;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(201, 168, 76, 0.18) transparent;
+}
+/* 非 integrated 模式：整体可以滚动 */
+aside.right-console:not(#buli-team-panel),
+.right-console:not(#buli-team-panel) {
+	overflow-y: auto;
+}
+/* integrated 模式：外层锁死，内层 buli-scroll 滚动 */
+#buli-team-panel.buli-integrated-host {
+	overflow: hidden !important;
+}
+
+/* 右侧栏内容隐藏原生 tab（由不良人面板接管） */
+aside.right-console > .right-console-tabs,
+aside.right-console > .right-console-content {
+	display: none !important;
+}
+
+/* 竖排 tab 布局：flex-column body，flex-row .buli-main(tab-bar + scroll) */
+#buli-team-panel.buli-integrated-host .buli-body {
+	display: flex !important;
+	flex-direction: column !important;
+	width: 100% !important;
+	flex: 1 1 0% !important;
+	min-height: 0 !important;
+	box-sizing: border-box !important;
+	padding: 14px 0 0 0 !important;
+	border-left: none !important;
+	background: transparent !important;
+	overflow: hidden !important;
+}
+
+/* .buli-main: tab-bar + scroll 并列容器 */
+#buli-team-panel .buli-main {
+	display: flex !important;
+	flex-direction: row !important;
+	flex: 1 1 0% !important;
+	width: 100% !important;
+	min-height: 0 !important;
+	overflow: hidden !important;
+}
+
+/* ── Tranche 12: 强制布局 + IDE 风格彻底重写 ────────────────────────── */
+
+/* 面板根元素：flex column，外层不滚动，高度由网格撑开 */
+#buli-team-panel.buli-integrated-host {
+	display: flex !important;
+	flex-direction: column !important;
+	overflow: hidden !important;   /* 外层绝不滚动，内层 buli-scroll 负责滚动 */
+	height: 100% !important;       /* 填满 grid 分配的高度 */
+	box-sizing: border-box !important;
+}
+
+/* Head 区域：全宽紧凑 */
+#buli-team-panel .buli-head {
+	flex-shrink: 0 !important;
+	padding: 0 16px 6px 16px !important;
+	margin-bottom: 6px !important;
+}
+
+#buli-team-panel .buli-title {
+	font-size: 13px !important;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+#buli-team-panel .buli-subtitle {
+	font-size: 11px;
+	color: rgba(157, 168, 192, 0.55);
+	margin-top: 1px;
+}
+
+/* Tab 栏：左侧 58px 竖排，可滑动 */
+#buli-team-panel .buli-tab-bar {
+	flex: 0 0 58px !important;
+	width: 58px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	overflow-y: auto !important;
+	overflow-x: hidden !important;
+	gap: 0 !important;
+	background: transparent !important;
+	border-right: 1px solid rgba(201, 168, 76, 0.12) !important;
+	border-bottom: none !important;
+	box-shadow: none !important;
+	padding: 4px 0 !important;
+}
+
+#buli-team-panel .buli-tab {
+	flex: 0 0 auto !important;
+	width: 100% !important;
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 3px !important;
+	padding: 14px 4px 13px !important;
+	background: transparent !important;
+	border: none !important;
+	border-right: 2px solid transparent !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	transition: color 120ms, background 120ms;
+	white-space: nowrap !important;
+	position: relative;
+	color: rgba(157, 168, 192, 0.45);
+}
+
+#buli-team-panel .buli-tab-icon {
+	font-size: 13px;
+	line-height: 1;
+	color: inherit;
+	opacity: 0.65;
+}
+
+#buli-team-panel .buli-tab-lbl {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	color: inherit;
+}
+
+#buli-team-panel .buli-tab-count {
+	position: absolute;
+	top: 4px; right: 6px;
+	font-size: 9px; font-weight: 700; line-height: 1;
+	color: var(--buli-liujin, #c9a84c);
+}
+#buli-team-panel .buli-tab-count.zero { display: none !important; }
+
+#buli-team-panel .buli-tab.active {
+	color: var(--buli-liujin-2, #e0bf68) !important;
+	background: rgba(201, 168, 76, 0.06) !important;
+	border-right-color: var(--buli-liujin, #c9a84c) !important;
+	box-shadow: none !important;
+}
+#buli-team-panel .buli-tab.active .buli-tab-icon { opacity: 1; }
+
+#buli-team-panel .buli-tab:hover:not(.active) {
+	color: rgba(224, 191, 104, 0.65) !important;
+	background: rgba(201, 168, 76, 0.04) !important;
+}
+
+/* Scroll 区域：右侧内容，占满剩余宽度 */
+#buli-team-panel .buli-scroll {
+	flex: 1 1 0% !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+	display: block !important;
+	overflow-y: auto !important;
+	overflow-x: hidden !important;
+	padding: 6px 16px 10px 12px !important;
+	box-sizing: border-box !important;
+}
+
+/* Tab content 区域：非 active 彻底隐藏 */
+#buli-team-panel .buli-tab-content {
+	display: none !important;
+}
+
+#buli-team-panel .buli-tab-content.active {
+	display: block !important;
+	width: 100% !important;
+	padding-top: 10px !important;
+	/* 无 border-bottom / margin-bottom：避免手风琴感 */
+}
+
+/* 不良人面板标题美化 */
+#buli-team-panel .buli-title {
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	color: var(--buli-liujin-2, #e0bf68);
+	text-shadow: 0 1px 8px rgba(201, 168, 76, 0.18);
+}
+
+#buli-team-panel .buli-subtitle {
+	font-size: 11px;
+	color: rgba(157, 168, 192, 0.7);
+	letter-spacing: 0.04em;
+}
+
+/* [Tranche 13] Dead old-class overrides removed:
+   .buli-section, .buli-stat, .buli-pill, .buli-seat-card, .buli-timeline-item */
+
+/* 滚动条美化 */
+#buli-team-panel .buli-scroll::-webkit-scrollbar {
+	width: 5px;
+}
+
+#buli-team-panel .buli-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+#buli-team-panel .buli-scroll::-webkit-scrollbar-thumb {
+	background: rgba(201, 168, 76, 0.16);
+	border-radius: 999px;
+}
+
+#buli-team-panel .buli-scroll::-webkit-scrollbar-thumb:hover {
+	background: rgba(201, 168, 76, 0.3);
+}
+
+/* kicker 暗桩台内旧名文本覆盖 */
+#kicker > div {
+	font-size: 0 !important;
+	line-height: 0 !important;
+	overflow: hidden !important;
+}
+#kicker > div::after {
+	content: "暗桩台 — 接入工具调用 / 不良人活动";
+	font-size: 12px;
+	line-height: normal;
+	color: #8B949E;
+}
+
+/* ── Tranche 14: 暗桩台 (网格化) ───────────────────────────────────── */
+.buli-ankuangtai {
+	grid-area: ankuangtai;
+	height: 32px;
+	overflow: hidden;
+	background: var(--buli-bar-bg, #0a0e1a);
+	border-top: 1px solid var(--buli-bar-border, rgba(201, 168, 76, 0.06));
+	transition: height var(--buli-transition-normal, 200ms ease);
+	z-index: 10;
+}
+
+.buli-ankuangtai.open {
+	height: 200px;
+}
+
+.buli-ankuangtai-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 32px;
+	padding: 0 12px;
+	color: var(--buli-text-2, #9da8c0);
+	cursor: pointer;
+	user-select: none;
+}
+
+.buli-ankuangtai-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--buli-text-accent, rgba(224, 191, 104, 0.8));
+	letter-spacing: 0.06em;
+	font-size: var(--buli-text-sm, 11px);
+	font-weight: 700;
+	font-family: "Noto Serif SC", "PingFang SC", serif;
+}
+
+.buli-ankuangtai-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: var(--buli-radius-pill, 999px);
+	background: var(--buli-accent-subtle, rgba(201, 168, 76, 0.16));
+	color: var(--buli-liujin, #c9a84c);
+	font-size: 9px;
+	font-weight: 700;
+}
+
+.buli-ankuangtai-filters,
+.buli-ankuangtai-rows {
+	display: none;
+}
+
+.buli-ankuangtai.open .buli-ankuangtai-filters {
+	display: flex;
+	gap: 4px;
+	padding: 0 12px 6px;
+}
+
+.buli-ankuangtai.open .buli-ankuangtai-rows {
+	display: block;
+	height: calc(100% - 58px);
+	padding: 0 12px 10px;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--buli-scrollbar-thumb, rgba(201, 168, 76, 0.16)) transparent;
+}
+
+.buli-akt-filter {
+	padding: 2px 8px;
+	border-radius: var(--buli-radius-pill, 999px);
+	border: 1px solid transparent;
+	background: var(--buli-tool-bg, rgba(201, 168, 76, 0.06));
+	color: var(--buli-text-3, #8d98af);
+	font-size: var(--buli-text-xs, 10px);
+	cursor: pointer;
+	transition: all var(--buli-transition-fast, 120ms ease);
+	font-family: inherit;
+}
+
+.buli-akt-filter.active {
+	border-color: var(--buli-border-2, rgba(201, 168, 76, 0.22));
+	background: var(--buli-accent-subtle, rgba(201, 168, 76, 0.14));
+	color: var(--buli-liujin, #c9a84c);
+}
+
+.buli-akt-row {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	padding: 4px 0;
+	border-bottom: 1px solid var(--buli-bar-border, rgba(201, 168, 76, 0.06));
+	color: var(--buli-text-2, #a0abc1);
+	font-size: var(--buli-text-sm, 11px);
+	font-family: var(--buli-font-mono, ui-monospace, SFMono-Regular, monospace);
+}
+
+.buli-akt-time {
+	min-width: 60px;
+	color: var(--buli-text-3, #7f8aa1);
+	font-size: var(--buli-text-xs, 10px);
+	font-variant-numeric: tabular-nums;
+}
+
+.buli-akt-agent {
+	color: var(--buli-tool-text, rgba(224, 191, 104, 0.55));
+	font-size: var(--buli-text-xs, 10px);
+}
+
+.buli-akt-icon {
+	flex-shrink: 0;
+	width: 14px;
+	text-align: center;
+}
+
+.buli-akt-content {
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ── 左侧导航文本替换（CSS-only，不破坏 Lit 事件绑定）──────────── */
+/* 段落标签（按 section 顺序：chat / control / agent / settings） */
+.sidebar .nav-section:nth-of-type(1) .nav-section__label-text,
+.sidebar .nav-section:nth-of-type(2) .nav-section__label-text,
+.sidebar .nav-section:nth-of-type(3) .nav-section__label-text,
+.sidebar .nav-section:nth-of-type(4) .nav-section__label-text {
+	font-size: 0;
+	line-height: 0;
+	overflow: hidden;
+}
+.sidebar .nav-section:nth-of-type(1) .nav-section__label-text::after {
+	content: "驿报";
+	font-size: 11px;
+	line-height: normal;
+}
+.sidebar .nav-section:nth-of-type(2) .nav-section__label-text::after {
+	content: "军机";
+	font-size: 11px;
+	line-height: normal;
+}
+.sidebar .nav-section:nth-of-type(3) .nav-section__label-text::after {
+	content: "天罡";
+	font-size: 11px;
+	line-height: normal;
+}
+.sidebar .nav-section:nth-of-type(4) .nav-section__label-text::after {
+	content: "机枢";
+	font-size: 11px;
+	line-height: normal;
+}
+
+/* 导航项（按 href 属性精准定位，兼容 base path） */
+.nav-item[href$="/chat"] .nav-item__text,
+.nav-item[href$="/overview"] .nav-item__text,
+.nav-item[href$="/channels"] .nav-item__text,
+.nav-item[href$="/instances"] .nav-item__text,
+.nav-item[href$="/sessions"] .nav-item__text,
+.nav-item[href$="/usage"] .nav-item__text,
+.nav-item[href$="/cron"] .nav-item__text,
+.nav-item[href$="/agents"] .nav-item__text,
+.nav-item[href$="/skills"] .nav-item__text,
+.nav-item[href$="/nodes"] .nav-item__text,
+.nav-item[href$="/config"] .nav-item__text,
+.nav-item[href$="/communications"] .nav-item__text,
+.nav-item[href$="/appearance"] .nav-item__text,
+.nav-item[href$="/automation"] .nav-item__text,
+.nav-item[href$="/infrastructure"] .nav-item__text,
+.nav-item[href$="/ai-agents"] .nav-item__text,
+.nav-item[href$="/debug"] .nav-item__text,
+.nav-item[href$="/logs"] .nav-item__text,
+.sidebar-utility-link .nav-item__text {
+	font-size: 0;
+	line-height: 0;
+	overflow: hidden;
+}
+.nav-item[href$="/chat"] .nav-item__text::after { content: "驿报"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/overview"] .nav-item__text::after { content: "军情总览"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/channels"] .nav-item__text::after { content: "驿路"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/instances"] .nav-item__text::after { content: "外探分舵"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/sessions"] .nav-item__text::after { content: "案卷"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/usage"] .nav-item__text::after { content: "用度"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/cron"] .nav-item__text::after { content: "暗哨"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/agents"] .nav-item__text::after { content: "天罡"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/skills"] .nav-item__text::after { content: "秘术"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/nodes"] .nav-item__text::after { content: "据点"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/config"] .nav-item__text::after { content: "规制"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/communications"] .nav-item__text::after { content: "飞鸽传书"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/appearance"] .nav-item__text::after { content: "门面"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/automation"] .nav-item__text::after { content: "暗器"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/infrastructure"] .nav-item__text::after { content: "据点网"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/ai-agents"] .nav-item__text::after { content: "天罡星"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/debug"] .nav-item__text::after { content: "验尸"; font-size: 13px; line-height: normal; }
+.nav-item[href$="/logs"] .nav-item__text::after { content: "密档"; font-size: 13px; line-height: normal; }
+.sidebar-utility-link .nav-item__text::after { content: "卷宗"; font-size: 13px; line-height: normal; }
+
+/* 版本标签 */
+.sidebar-version__label {
+	font-size: 0;
+	line-height: 0;
+	overflow: hidden;
+}
+.sidebar-version__label::after {
+	content: "行令";
+	font-size: 11px;
+	line-height: normal;
+}
+
+@media (max-width: 1200px) {
+	.shell,
+	.shell--nav-collapsed {
+		grid-template-columns: minmax(0, 1fr) !important;
+		grid-template-rows: var(--shell-topbar-height, 58px) minmax(0, 1fr) !important;
+		grid-template-areas:
+			"topbar"
+			"content" !important;
+	}
+
+	.topbar {
+		grid-column: 1 / 2 !important;
+	}
+
+	.buli-ankuangtai {
+		display: none !important;
+	}
+}
+
+/* ── Tranche 12: Claude Code / IDE 风格重构 ───────────────────────────── */
+
+@keyframes bp-pulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── bp-hero：主角色身份显示 ───────────────────────────────────────────── */
+.bp-hero {
+	padding: 10px 0 8px;
+	border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+	margin-bottom: 12px;
+}
+
+.bp-hero-top {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.bp-hero-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--buli-status-idle, #5a6580);
+	flex-shrink: 0;
+}
+
+.bp-hero.active .bp-hero-dot {
+	background: var(--buli-status-live, #4ade80);
+	box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+	animation: bp-pulse 2s infinite;
+}
+
+.bp-hero-name {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--buli-liujin-2, #e0bf68);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-hero-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+	padding-left: 16px;
+}
+
+.bp-hero-status {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--buli-text-3, #5a6580);
+}
+
+.bp-hero.active .bp-hero-status {
+	color: var(--buli-status-live, #4ade80);
+}
+
+.bp-hero-elapsed {
+	font-size: 11px;
+	color: var(--buli-text-2, #7f8aa1);
+	font-variant-numeric: tabular-nums;
+}
+
+.bp-hero-stats {
+	font-size: 11px;
+	color: var(--buli-text-3, #5a6580);
+}
+
+/* ── bp-action：当前工具/动作 ──────────────────────────────────────────── */
+.bp-action {
+	font-size: 12px;
+	color: var(--buli-text-2, #9da8c0);
+	padding: 6px 8px;
+	margin-bottom: 10px;
+	background: rgba(201, 168, 76, 0.04);
+	border-left: 2px solid rgba(201, 168, 76, 0.25);
+	border-radius: 0 4px 4px 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-action-icon {
+	color: var(--buli-liujin, #c9a84c);
+	margin-right: 4px;
+}
+
+/* ── bp-section-label：段落小标题 ──────────────────────────────────────── */
+.bp-section-label {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--buli-text-3, #5a6580);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	margin-bottom: 6px;
+}
+
+/* ── bp-objective：目标块 ──────────────────────────────────────────────── */
+.bp-objective {
+	margin-bottom: 14px;
+}
+
+.bp-objective-text {
+	font-size: 12px;
+	line-height: 1.6;
+	color: var(--buli-text, #d3dae8);
+	word-break: break-word;
+}
+
+/* ── bp-squad：编队 + 子代理 ──────────────────────────────────────────── */
+.bp-squad {
+	margin-bottom: 14px;
+}
+
+.bp-squad-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 0;
+	border-bottom: 1px solid rgba(201, 168, 76, 0.04);
+}
+
+.bp-squad-row:last-child {
+	border-bottom: none;
+}
+
+.bp-squad-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--buli-status-idle, #5a6580);
+	flex-shrink: 0;
+}
+
+.bp-squad-row.live .bp-squad-dot {
+	background: var(--buli-status-live, #4ade80);
+	box-shadow: 0 0 4px rgba(74, 222, 128, 0.4);
+}
+
+.bp-squad-row.done .bp-squad-dot {
+	background: var(--buli-status-done, #2d8a55);
+}
+
+.bp-squad-row.failed .bp-squad-dot {
+	background: var(--buli-xuesha, #8b0000);
+}
+
+.bp-squad-name {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--buli-text, #d3dae8);
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-squad-badge {
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--buli-text-3, #5a6580);
+	flex-shrink: 0;
+}
+
+.bp-squad-row.live .bp-squad-badge {
+	color: var(--buli-status-live, #4ade80);
+}
+
+.bp-squad-row.done .bp-squad-badge {
+	color: var(--buli-status-done, #2d8a55);
+}
+
+.bp-squad-row.failed .bp-squad-badge {
+	color: var(--buli-xuesha-2, #a62b2b);
+}
+
+.bp-squad-tool {
+	font-size: 10px;
+	color: rgba(224, 191, 104, 0.55);
+	flex-shrink: 0;
+	max-width: 120px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ── bp-timeline：活动时间线 ──────────────────────────────────────────── */
+.bp-timeline {
+	margin-bottom: 14px;
+}
+
+.bp-timeline-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 4px 0;
+	border-bottom: 1px solid rgba(201, 168, 76, 0.03);
+}
+
+.bp-timeline-item:last-child {
+	border-bottom: none;
+}
+
+.bp-timeline-time {
+	font-size: 10px;
+	color: var(--buli-text-3, #5a6580);
+	flex-shrink: 0;
+	min-width: 36px;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	padding-top: 1px;
+}
+
+.bp-timeline-text {
+	font-size: 11px;
+	color: var(--buli-text-2, #9da8c0);
+	flex: 1;
+	min-width: 0;
+	word-break: break-word;
+	line-height: 1.45;
+}
+
+.bp-timeline-item.latest .bp-timeline-text {
+	color: var(--buli-text, #d3dae8);
+	font-weight: 500;
+}
+
+/* ── bp-handoff：交接缘由 ────────────────────────────────────────────── */
+.bp-handoff {
+	margin-bottom: 14px;
+}
+
+.bp-handoff-text {
+	font-size: 11px;
+	color: var(--buli-text-2, #7f8aa1);
+	line-height: 1.5;
+	word-break: break-word;
+}
+
+/* [Tranche 13] Dead legacy classes removed:
+   bp-status/bp-dot/bp-label, bp-elapsed, bp-stats, bp-detail, bp-body, bp-orch */
+
+/* ── bp-divider：段落分隔符 ─────────────────────────────────────────── */
+.bp-divider {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 10px 0 6px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: rgba(224, 191, 104, 0.45);
+}
+
+.bp-divider::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: rgba(201, 168, 76, 0.1);
+}
+
+/* ── bp-row：通用紧凑行（活动记录 / issue 行）──────────────────── */
+.bp-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+.bp-row:hover {
+	background: rgba(201, 168, 76, 0.03);
+}
+
+.bp-row-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: rgba(201, 168, 76, 0.25);
+}
+
+.bp-row.latest .bp-row-dot {
+	background: var(--buli-liujin, #c9a84c);
+	box-shadow: 0 0 4px rgba(201, 168, 76, 0.4);
+}
+
+.bp-row.warn .bp-row-dot {
+	background: #b8544f;
+}
+
+.bp-row-text {
+	font-size: 12px;
+	color: var(--buli-text-2, #9da8c0);
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-row.latest .bp-row-text {
+	color: rgba(224, 191, 104, 0.85);
+}
+
+.bp-row-time {
+	font-size: 10px;
+	color: var(--buli-text-3, #5a6580);
+	flex-shrink: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+/* [Tranche 13] Dead bp-orch + bp-child blocks removed */
+
+/* ── bp-filter-bar：天罡过滤栏 ──────────────────────────────────────── */
+.bp-filter-bar {
+	display: flex;
+	gap: 4px;
+	padding-bottom: 8px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+	flex-wrap: wrap;
+}
+
+.bp-filter {
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--buli-text-2, #7f8aa1);
+	cursor: pointer;
+	transition: all 120ms;
+	font-family: inherit;
+}
+
+.bp-filter:hover {
+	color: rgba(224, 191, 104, 0.8);
+	background: rgba(201, 168, 76, 0.06);
+}
+
+.bp-filter.active {
+	color: var(--buli-liujin-2, #e0bf68);
+	background: rgba(201, 168, 76, 0.12);
+	border-color: rgba(201, 168, 76, 0.2);
+}
+
+/* ── bp-seat：天罡席位紧凑行 ────────────────────────────────────────── */
+.bp-seats {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.bp-seat {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 10px 8px;
+	margin-bottom: 6px;
+	border-radius: 10px;
+	background: var(--buli-card, #1c1c30);
+	border-bottom: none;
+	transition: background 150ms, box-shadow 150ms;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.bp-seat:last-child {
+	border-bottom: none;
+}
+
+.bp-seat:hover {
+	background: var(--buli-card-hover, #22263a) !important;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.bp-seat-icon {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 13px;
+	font-weight: 700;
+	flex-shrink: 0;
+	background: rgba(201, 168, 76, 0.15);
+	color: var(--buli-liujin, #c9a84c);
+}
+
+.bp-seat.live .bp-seat-icon {
+	background: rgba(74, 222, 128, 0.15);
+	color: var(--buli-status-live, #4ade80);
+}
+
+.bp-seat-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.bp-seat-top {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.bp-seat-name {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--buli-text, #d3dae8);
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-seat-badge {
+	font-size: 10px;
+	padding: 2px 7px;
+	border-radius: 999px;
+	flex-shrink: 0;
+	color: var(--buli-text-2, #7f8aa1);
+	background: rgba(90, 101, 128, 0.15);
+}
+
+.bp-seat-badge.live {
+	color: var(--buli-status-live);
+	background: rgba(74, 222, 128, 0.12);
+}
+
+.bp-seat-badge.done {
+	color: var(--buli-liujin-2, #d4af37);
+	background: rgba(201, 168, 76, 0.10);
+}
+
+.bp-seat-badge.failed {
+	color: var(--buli-status-fail);
+	background: rgba(180, 30, 30, 0.10);
+}
+
+.bp-seat-badge.queued {
+	color: var(--buli-status-idle);
+	background: rgba(90, 101, 128, 0.10);
+}
+
+.bp-seat-detail {
+	font-size: 11px;
+	color: var(--buli-text-2, #7f8aa1);
+	margin-top: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-seat-tool {
+	font-size: 10px;
+	color: rgba(224, 191, 104, 0.55);
+	margin-top: 2px;
+}
+
+/* ── bp-event：驿报事件行（卡片式） ───────────────────────────────── */
+.bp-event {
+	padding: 8px 10px;
+	border-radius: 8px;
+	margin-bottom: 4px;
+	background: var(--buli-card);
+	border: 1px solid var(--buli-border);
+	transition: background 120ms, border-color 120ms;
+}
+
+.bp-event:hover {
+	background: var(--buli-card-hover);
+	border-color: var(--buli-border-2);
+}
+
+.bp-event.live {
+	border-color: rgba(74, 222, 128, 0.25);
+	background: var(--buli-live-bg);
+}
+
+.bp-event.live:hover {
+	border-color: rgba(74, 222, 128, 0.4);
+}
+
+.bp-event-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.bp-event-icon {
+	font-size: 12px;
+	color: var(--buli-accent);
+	flex-shrink: 0;
+	width: 16px;
+	text-align: center;
+}
+
+.bp-event.live .bp-event-icon {
+	color: var(--buli-status-live);
+}
+
+.bp-event-agent {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--buli-text);
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bp-event-time {
+	font-size: 10px;
+	color: var(--buli-text-3);
+	flex-shrink: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.bp-event-text {
+	font-size: 11px;
+	color: var(--buli-text-2);
+	margin-top: 4px;
+	padding-left: 24px;
+	line-height: 1.4;
+}
+
+.bp-empty {
+	font-size: 12px;
+	color: var(--buli-text-3);
+	padding: 24px 10px;
+	text-align: center;
+	background: var(--buli-card);
+	border: 1px dashed var(--buli-border);
+	border-radius: 8px;
+	margin: 4px 0;
+}
+
+/* ── Tranche 13: 驿报实时状态头 ─────────────────────────────────────── */
+.bp-dispatch-live {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 0 10px;
+	border-bottom: 1px solid var(--buli-border);
+	margin-bottom: 8px;
+	font-size: 12px;
+	color: var(--buli-text-2);
+}
+.bp-dispatch-live b {
+	color: var(--buli-liujin-2, #e0bf68);
+	font-weight: 700;
+	max-width: 140px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.bp-dispatch-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: var(--buli-status-idle, #5a6580);
+}
+.bp-dispatch-dot.on {
+	background: var(--buli-status-live, #4ade80);
+	box-shadow: 0 0 5px rgba(74, 222, 128, 0.5);
+	animation: bp-pulse 2s infinite;
+}
+.bp-dispatch-stat {
+	font-size: 10px;
+	color: var(--buli-text-3, #5a6580);
+	margin-left: auto;
+}
+.bp-dispatch-action {
+	font-size: 11px;
+	color: var(--buli-text-2, #9da8c0);
+	padding: 3px 6px;
+	margin-bottom: 8px;
+	background: rgba(201, 168, 76, 0.04);
+	border-left: 2px solid rgba(201, 168, 76, 0.2);
+	border-radius: 0 3px 3px 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.bp-event.live {
+	border-color: rgba(74, 222, 128, 0.30);
+	background: var(--buli-live-bg);
+}
+
+/* ── bp-kv：案卷键值对 ──────────────────────────────────────────────── */
+.bp-kv {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	margin-bottom: 4px;
+	background: var(--buli-card);
+	border: 1px solid var(--buli-border);
+}
+
+.bp-kv-label {
+	font-size: 11px;
+	color: var(--buli-text-3);
+	flex-shrink: 0;
+	min-width: 42px;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+}
+
+.bp-kv-val {
+	font-size: 12px;
+	color: var(--buli-text);
+	font-weight: 500;
+	word-break: break-all;
+	flex: 1;
+	min-width: 0;
+}
+
+.bp-kv-val.warn {
+	color: var(--buli-liujin-2);
+}
+
+.bp-archive-status {
+	font-size: 12px;
+	color: var(--buli-status-done);
+	padding: 8px 0 4px;
+}
+
+.bp-archive-status.warn {
+	color: var(--buli-liujin-2);
+}
+
+/* ── bp-code：代码/错误摘要块 ───────────────────────────────────────── */
+.bp-code {
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--buli-text-2);
+	background: var(--buli-card);
+	border: 1px solid var(--buli-border);
+	border-radius: 8px;
+	padding: 8px 10px;
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+/* ── bp-actions：操作按钮行 ──────────────────────────────────────────── */
+.bp-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding-top: 10px;
+}
+
+.bp-btn {
+	border: 1px solid var(--buli-border);
+	border-radius: 999px;
+	padding: 5px 12px;
+	background: var(--buli-card);
+	color: var(--buli-text-2);
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 120ms;
+	font-family: inherit;
+	box-shadow: var(--buli-shadow-sm);
+}
+
+.bp-btn:hover {
+	background: var(--buli-card-hover);
+	border-color: var(--buli-liujin);
+	color: var(--buli-liujin-2);
+	box-shadow: var(--buli-shadow-md);
+}
+
+/* ── Tranche 14: 运行状态条 (中栏顶部) ─────────────────────────────── */
+.buli-status-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 14px;
+	margin: 0 -18px;
+	min-height: 30px;
+	background: var(--buli-bar-bg, #0a0e1a);
+	border-bottom: 1px solid var(--buli-bar-border, rgba(201, 168, 76, 0.06));
+	font-size: var(--buli-text-sm, 11px);
+	color: var(--buli-text-2, #9da8c0);
+	transition: background var(--buli-transition-fast, 120ms ease);
+}
+
+.buli-status-bar.active {
+	background: var(--buli-status-live-bg, rgba(224, 191, 104, 0.06));
+	border-bottom-color: var(--buli-status-live-border, rgba(224, 191, 104, 0.18));
+}
+
+.buli-status-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: var(--buli-status-idle, #5a6580);
+}
+
+.buli-status-bar.active .buli-status-dot {
+	background: var(--buli-status-live, #e0bf68);
+	box-shadow: 0 0 5px var(--buli-status-live-glow, rgba(224, 191, 104, 0.4));
+	animation: bp-pulse 2s infinite;
+}
+
+.buli-status-agent {
+	font-weight: 700;
+	color: var(--buli-text-accent, #e0bf68);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 140px;
+}
+
+.buli-status-tool {
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--buli-tool-text, rgba(224, 191, 104, 0.55));
+}
+
+.buli-status-phase {
+	padding: 1px 6px;
+	border-radius: var(--buli-radius-pill, 999px);
+	background: var(--buli-accent-subtle, rgba(201, 168, 76, 0.10));
+	color: var(--buli-text-accent, #e0bf68);
+	font-size: var(--buli-text-xs, 10px);
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.buli-status-stats {
+	flex-shrink: 0;
+	font-variant-numeric: tabular-nums;
+	color: var(--buli-text-3, #5a6580);
+	font-size: var(--buli-text-xs, 10px);
+}
+
+/* ── Tranche 14: 团队消息分层 (中栏气泡增强) ──────────────────────── */
+.lpt-msg-kickoff {
+	border-left: 3px solid var(--buli-status-live, #e0bf68) !important;
+	background: var(--buli-status-live-bg, rgba(224, 191, 104, 0.06)) !important;
+}
+
+.lpt-msg-handoff {
+	border-left: 3px solid var(--buli-info, #7ba7ff) !important;
+	background: var(--buli-info-bg, rgba(123, 167, 255, 0.06)) !important;
+}
+
+.lpt-msg-return {
+	border-left: 3px solid var(--buli-status-done, #4aa36f) !important;
+	background: var(--buli-status-done-bg, rgba(74, 163, 111, 0.06)) !important;
+}
+
+.lpt-msg-verify {
+	border-left: 3px solid var(--buli-brand-zhuqing, #3a5f4b) !important;
+	background: rgba(58, 95, 75, 0.08) !important;
+}
+
+.lpt-msg-fail {
+	border-left: 3px solid var(--buli-status-fail, #c04a4a) !important;
+	background: var(--buli-status-fail-bg, rgba(192, 74, 74, 0.08)) !important;
+}
+
+/* ── Tranche 14: 上下文压力条 ──────────────────────────────────────── */
+.bp-pressure {
+	margin-bottom: 10px;
+}
+
+.bp-pressure-bar {
+	height: 6px;
+	border-radius: var(--buli-radius-pill, 999px);
+	background: var(--buli-bg-surface-2, #151d31);
+	overflow: hidden;
+}
+
+.bp-pressure-fill {
+	height: 100%;
+	border-radius: var(--buli-radius-pill, 999px);
+	transition: width var(--buli-transition-normal, 200ms ease), background var(--buli-transition-fast, 120ms ease);
+	background: var(--buli-status-done, #4aa36f);
+}
+
+.bp-pressure-fill.warn {
+	background: var(--buli-warn, #d0923d);
+}
+
+.bp-pressure-fill.critical {
+	background: var(--buli-status-fail, #c04a4a);
+}
+
+.bp-pressure-label {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 3px;
+	font-size: var(--buli-text-xs, 10px);
+	color: var(--buli-text-3, #5a6580);
+}
+
+/* ── Tranche 14: 阶段签牌 ─────────────────────────────────────────── */
+.bp-phase-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 10px;
+	border-radius: var(--buli-radius-pill, 999px);
+	font-size: var(--buli-text-sm, 11px);
+	font-weight: 600;
+	background: var(--buli-accent-subtle, rgba(201, 168, 76, 0.10));
+	color: var(--buli-text-accent, #e0bf68);
+	border: 1px solid var(--buli-border-2, rgba(201, 168, 76, 0.16));
+}
+
+/* ── Tranche 14: 军令目标卡 ────────────────────────────────────────── */
+.bp-mission-card {
+	padding: 10px 12px;
+	border-radius: var(--buli-radius-md, 10px);
+	background: var(--buli-card-bg, rgba(17, 24, 43, 0.60));
+	border: 1px solid var(--buli-card-border, rgba(201, 168, 76, 0.08));
+	margin-bottom: 10px;
+}
+
+.bp-mission-card .bp-section-label {
+	margin-bottom: 4px;
+}
+
+.bp-mission-card .t12-obj {
+	margin-bottom: 6px;
+}
+
+/* ── Tranche 14: 折损高亮行 ────────────────────────────────────────── */
+.bp-alert-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 10px;
+	border-radius: var(--buli-radius-sm, 6px);
+	margin-bottom: 4px;
+	background: var(--buli-status-fail-bg, rgba(192, 74, 74, 0.08));
+	border: 1px solid var(--buli-status-fail-border, rgba(192, 74, 74, 0.18));
+	font-size: var(--buli-text-sm, 11px);
+	color: var(--buli-status-fail, #c04a4a);
+}
+
+.bp-alert-row .bp-row-text {
+	color: var(--buli-text-2, #9da8c0);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Tranche 15: 温润如玉·浅色主题全量覆写
+   适配手动切换 (data-theme-mode=light)；与 @media 版本完全等价
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* §A   CSS 设计令牌 ─────────────────────────────────────────────────── */
+:root[data-theme-mode=light] {
+	/* 背景 */
+	--buli-bg:           #f8f4ec;
+	--buli-bg-elevated:  #f2ece0;
+	--buli-bg-surface:   #faf7f0;
+	--buli-bg-surface-2: #f5f0e6;
+	--buli-bg-hover:     #ede7da;
+	--buli-bg-active:    #e8e0d0;
+	--buli-bg-overlay:   rgba(248, 244, 236, 0.88);
+
+	/* 导航 */
+	--buli-nav-bg:          #f0ebe0;
+	--buli-nav-hover:       #e8e1d4;
+	--buli-nav-active:      rgba(140, 110, 50, 0.12);
+	--buli-nav-text:        #8b7a62;
+	--buli-nav-text-active: #6b4c20;
+
+	/* 右栏 */
+	--buli-console-bg:     #faf7f0;
+	--buli-console-border: rgba(140, 110, 50, 0.12);
+
+	/* 暗桩台 */
+	--buli-bar-bg:     #f2ece0;
+	--buli-bar-border: rgba(140, 110, 50, 0.10);
+
+	/* 文字 */
+	--buli-text:         #2d2014;
+	--buli-text-strong:  #1a1008;
+	--buli-text-2:       #6b5a42;
+	--buli-text-3:       #9c8a6e;
+	--buli-text-inverse: #faf7f0;
+	--buli-text-accent:  #7a5c28;
+
+	/* 边框 */
+	--buli-border:        rgba(140, 110, 50, 0.10);
+	--buli-border-2:      rgba(140, 110, 50, 0.18);
+	--buli-border-strong: rgba(140, 110, 50, 0.30);
+	--buli-border-hover:  rgba(140, 110, 50, 0.45);
+
+	/* 强调 */
+	--buli-accent:        #8c6e32;
+	--buli-accent-hover:  #7a5c28;
+	--buli-accent-subtle: rgba(140, 110, 50, 0.10);
+	--buli-accent-glow:   rgba(140, 110, 50, 0.15);
+	--buli-accent-fg:     #faf7f0;
+
+	/* 状态色 */
+	--buli-status-live:        #8c6e32;
+	--buli-status-live-bg:     rgba(140, 110, 50, 0.08);
+	--buli-status-live-border: rgba(140, 110, 50, 0.22);
+	--buli-status-live-glow:   rgba(140, 110, 50, 0.25);
+	--buli-status-queue:        #9c8a6e;
+	--buli-status-queue-bg:     rgba(156, 138, 110, 0.08);
+	--buli-status-queue-border: rgba(156, 138, 110, 0.18);
+	--buli-status-done:        #2d7a4a;
+	--buli-status-done-bg:     rgba(45, 122, 74, 0.08);
+	--buli-status-done-border: rgba(45, 122, 74, 0.22);
+	--buli-status-fail:        #a0362e;
+	--buli-status-fail-bg:     rgba(160, 54, 46, 0.08);
+	--buli-status-fail-border: rgba(160, 54, 46, 0.22);
+	--buli-status-timeout:     #8b7a62;
+	--buli-status-abort:       #9a8878;
+	--buli-status-idle:        #9c8a6e;
+
+	/* 工具流 */
+	--buli-tool-bg:     rgba(140, 110, 50, 0.04);
+	--buli-tool-border: rgba(140, 110, 50, 0.15);
+	--buli-tool-text:   rgba(107, 90, 66, 0.65);
+	--buli-tool-active: rgba(140, 110, 50, 0.10);
+
+	/* 阴影 */
+	--buli-shadow-sm: 0 1px 3px rgba(100, 80, 40, 0.08);
+	--buli-shadow-md: 0 4px 12px rgba(100, 80, 40, 0.10);
+	--buli-shadow-lg: 0 12px 32px rgba(100, 80, 40, 0.12);
+
+	/* Tab */
+	--buli-tab-active-bg:     rgba(140, 110, 50, 0.10);
+	--buli-tab-active-text:   #6b4c20;
+	--buli-tab-active-border: #8c6e32;
+	--buli-tab-hover-bg:      rgba(140, 110, 50, 0.06);
+	--buli-tab-text:          #9c8a6e;
+
+	/* 卡片 */
+	--buli-card-bg:           rgba(250, 247, 240, 0.80);
+	--buli-card-border:       rgba(140, 110, 50, 0.10);
+	--buli-card-hover-bg:     rgba(237, 231, 218, 0.80);
+	--buli-card-hover-border: rgba(140, 110, 50, 0.22);
+
+	/* 席位签牌 */
+	--buli-badge-live-bg:    rgba(140, 110, 50, 0.10);
+	--buli-badge-live-text:  #8c6e32;
+	--buli-badge-done-bg:    rgba(45, 122, 74, 0.10);
+	--buli-badge-done-text:  #2d7a4a;
+	--buli-badge-fail-bg:    rgba(160, 54, 46, 0.10);
+	--buli-badge-fail-text:  #a0362e;
+	--buli-badge-queue-bg:   rgba(156, 138, 110, 0.08);
+	--buli-badge-queue-text: #9c8a6e;
+
+	/* 滚动条 */
+	--buli-scrollbar-thumb: rgba(140, 110, 50, 0.18);
+	--buli-scrollbar-hover: rgba(140, 110, 50, 0.30);
+
+	/* Lit 向后兼容令牌 */
+	--bg:                  #f8f4ec;
+	--bg-accent:           #f2ece0;
+	--bg-elevated:         #faf7f0;
+	--bg-hover:            #ede7da;
+	--bg-muted:            #f5f0e6;
+	--card:                #faf7f0;
+	--panel:               #f0ebe0;
+	--panel-strong:        #f5f0e6;
+	--panel-hover:         #ede7da;
+	--chrome:              rgba(242, 236, 224, 0.94);
+	--chrome-strong:       rgba(240, 235, 224, 0.98);
+	--text:                #2d2014;
+	--text-strong:         #1a1008;
+	--chat-text:           #2d2014;
+	--muted:               #8b7a62;
+	--muted-strong:        #6b5a42;
+	--border:              rgba(140, 110, 50, 0.12);
+	--border-strong:       rgba(140, 110, 50, 0.30);
+	--border-hover:        rgba(140, 110, 50, 0.45);
+	--input:               rgba(140, 110, 50, 0.10);
+	--ring:                #8c6e32;
+	--accent:              #8c6e32;
+	--accent-hover:        #7a5c28;
+	--accent-muted:        #8c6e32;
+	--accent-subtle:       rgba(140, 110, 50, 0.10);
+	--accent-foreground:   #faf7f0;
+	--accent-glow:         rgba(140, 110, 50, 0.15);
+	--primary:             #8c6e32;
+	--primary-foreground:  #faf7f0;
+	--secondary:           #f5f0e6;
+	--secondary-foreground:#3a2a14;
+	--info:                #4a78c0;
+	--ok:                  #2d7a4a;
+	--warn:                #b87a2a;
+	--danger:              #a0362e;
+	--focus:               rgba(140, 110, 50, 0.14);
+	--focus-ring:          0 0 0 2px var(--bg), 0 0 0 3px rgba(140, 110, 50, 0.40);
+	--shadow-sm:           0 1px 3px rgba(100, 80, 40, 0.08);
+	--shadow-md:           0 4px 12px rgba(100, 80, 40, 0.10);
+	--shadow-lg:           0 12px 32px rgba(100, 80, 40, 0.12);
+	--buli-card:           #fffdf8;
+	--buli-card-hover:     #faf5ec;
+	--buli-live-bg:        rgba(140, 110, 50, 0.08);
+}
+
+/* §B   壳体骨架 ────────────────────────────────────────────────────── */
+[data-theme-mode=light] body.lpt-workbench {
+	background: #f5f0e6 !important;
+}
+[data-theme-mode=light] .shell {
+	background: transparent !important;
+}
+
+/* §C   顶栏 ─────────────────────────────────────────────────────────── */
+[data-theme-mode=light] .topbar {
+	background: linear-gradient(180deg,
+		rgba(242, 236, 224, 0.98),
+		rgba(245, 240, 230, 0.94)) !important;
+	border-bottom-color: rgba(140, 110, 50, 0.12) !important;
+	backdrop-filter: blur(12px) saturate(1.1) !important;
+}
+
+/* §D   左侧导航栏 ───────────────────────────────────────────────────── */
+[data-theme-mode=light] .shell-nav {
+	background:
+		linear-gradient(180deg, #ede8dd, #e8e1d4) !important;
+	border-right-color: rgba(140, 110, 50, 0.14) !important;
+}
+[data-theme-mode=light] .sidebar,
+[data-theme-mode=light] .sidebar-shell {
+	background: transparent !important;
+}
+[data-theme-mode=light] .sidebar-shell__footer {
+	border-top-color: rgba(140, 110, 50, 0.12) !important;
+}
+[data-theme-mode=light] .sidebar-brand__eyebrow {
+	color: rgba(140, 110, 50, 0.60) !important;
+}
+[data-theme-mode=light] .nav-section__label {
+	color: rgba(140, 110, 50, 0.55) !important;
+}
+[data-theme-mode=light] .nav-section__label:hover {
+	color: #1a1008 !important;
+	background: rgba(140, 110, 50, 0.06) !important;
+}
+[data-theme-mode=light] .nav-item {
+	color: #6b5a42 !important;
+}
+[data-theme-mode=light] .nav-item:hover {
+	color: #1a1008 !important;
+	border-color: rgba(140, 110, 50, 0.14) !important;
+	background: rgba(140, 110, 50, 0.06) !important;
+}
+[data-theme-mode=light] .nav-item.active,
+[data-theme-mode=light] .nav-item--active {
+	color: #1a1008 !important;
+	border-color: rgba(140, 110, 50, 0.28) !important;
+	background: linear-gradient(180deg,
+		rgba(140, 110, 50, 0.12),
+		rgba(140, 110, 50, 0.06)) !important;
+	box-shadow:
+		inset 0 1px 0 rgba(255, 250, 240, 0.60),
+		0 4px 12px rgba(100, 80, 40, 0.08) !important;
+}
+[data-theme-mode=light] .nav-item.active::before,
+[data-theme-mode=light] .nav-item--active::before {
+	background: #8c6e32 !important;
+	box-shadow: 0 0 8px rgba(140, 110, 50, 0.25) !important;
+}
+[data-theme-mode=light] .nav-item.active .nav-item__icon,
+[data-theme-mode=light] .nav-item--active .nav-item__icon {
+	color: #8c6e32 !important;
+}
+
+/* §E   中央内容区 ───────────────────────────────────────────────────── */
+[data-theme-mode=light] .content {
+	background: linear-gradient(180deg,
+		rgba(248, 244, 236, 0.3),
+		rgba(248, 244, 236, 0.1)) !important;
+}
+
+/* §F   对话气泡 ─────────────────────────────────────────────────────── */
+[data-theme-mode=light] .chat-line.assistant .chat-bubble,
+[data-theme-mode=light] .chat-group.assistant .chat-bubble,
+[data-theme-mode=light] .chat-group.other .chat-bubble,
+[data-theme-mode=light] .chat-group.tool .chat-bubble {
+	background: rgba(250, 247, 240, 0.92) !important;
+	border: 1px solid rgba(140, 110, 50, 0.10) !important;
+	color: #2d2014 !important;
+}
+[data-theme-mode=light] .chat-line.user .chat-bubble,
+[data-theme-mode=light] .chat-group.user .chat-bubble {
+	background: rgba(140, 110, 50, 0.08) !important;
+	border: 1px solid rgba(140, 110, 50, 0.16) !important;
+	color: #2d2014 !important;
+}
+
+/* §G   输入框 ───────────────────────────────────────────────────────── */
+[data-theme-mode=light] .agent-chat__input,
+[data-theme-mode=light] .chat-compose,
+[data-theme-mode=light] .chat-composer,
+[data-theme-mode=light] [data-composer] {
+	border-color: rgba(140, 110, 50, 0.14) !important;
+	background: linear-gradient(180deg,
+		rgba(250, 247, 240, 0.96),
+		rgba(245, 240, 230, 0.98)) !important;
+	color: #2d2014 !important;
+}
+
+/* §H   右侧面板 ─────────────────────────────────────────────────────── */
+[data-theme-mode=light] aside.right-console,
+[data-theme-mode=light] .right-console,
+[data-theme-mode=light] #buli-team-panel.buli-integrated-host {
+	border-left: 1px solid rgba(140, 110, 50, 0.12) !important;
+	background:
+		radial-gradient(ellipse at top right, rgba(180, 150, 80, 0.05), transparent 50%),
+		linear-gradient(180deg, #faf7f0, #f5f0e6) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-title {
+	color: #7a5c28 !important;
+	text-shadow: none !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-subtitle {
+	color: #8b7a62 !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-tab {
+	color: #9c8a6e !important;
+	background: transparent !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-tab.active {
+	color: #6b4c20 !important;
+	background: rgba(140, 110, 50, 0.06) !important;
+	border-right-color: #8c6e32 !important;
+	border-bottom-color: transparent !important;
+	box-shadow: none !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-tab:hover:not(.active) {
+	color: #7a5c28 !important;
+	background: rgba(140, 110, 50, 0.04) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-tab-bar {
+	background: transparent !important;
+	border-right-color: rgba(140, 110, 50, 0.12) !important;
+	border-bottom-color: transparent !important;
+	box-shadow: none !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-scroll::-webkit-scrollbar-thumb {
+	background: rgba(140, 110, 50, 0.18) !important;
+}
+
+/* §I   底部暗桩台 & 状态栏 ──────────────────────────────────────────── */
+[data-theme-mode=light] .buli-ankuangtai {
+	background: #ede8dd !important;
+	border-top-color: rgba(140, 110, 50, 0.12) !important;
+}
+[data-theme-mode=light] .buli-ankuangtai-title {
+	color: rgba(107, 76, 32, 0.80) !important;
+}
+[data-theme-mode=light] .buli-ankuangtai-badge {
+	background: rgba(140, 110, 50, 0.12) !important;
+	color: #8c6e32 !important;
+}
+[data-theme-mode=light] .buli-status-bar {
+	background: #f0ebe0 !important;
+	border-bottom-color: rgba(140, 110, 50, 0.08) !important;
+	color: #6b5a42 !important;
+}
+[data-theme-mode=light] .buli-status-bar.active {
+	background: rgba(140, 110, 50, 0.06) !important;
+	border-bottom-color: rgba(140, 110, 50, 0.14) !important;
+}
+[data-theme-mode=light] .buli-status-agent {
+	color: #7a5c28 !important;
+}
+
+/* §J   导航杂项控件 ─────────────────────────────────────────────────── */
+[data-theme-mode=light] .nav-collapse-toggle,
+[data-theme-mode=light] .topbar-search,
+[data-theme-mode=light] .topbar-theme-mode,
+[data-theme-mode=light] .sidebar-version {
+	border-color: rgba(140, 110, 50, 0.14) !important;
+	background: rgba(250, 247, 240, 0.80) !important;
+	color: #6b5a42 !important;
+}
+[data-theme-mode=light] .topbar-search:hover,
+[data-theme-mode=light] .nav-collapse-toggle:hover,
+[data-theme-mode=light] .sidebar-version:hover {
+	border-color: rgba(140, 110, 50, 0.28) !important;
+	background: rgba(245, 240, 230, 0.90) !important;
+}
+[data-theme-mode=light] .topbar-theme-mode__btn--active,
+[data-theme-mode=light] .pill,
+[data-theme-mode=light] .topbar-status .pill {
+	border-color: rgba(140, 110, 50, 0.16) !important;
+	background: rgba(140, 110, 50, 0.08) !important;
+	color: #1a1008 !important;
+}
+[data-theme-mode=light] .dashboard-header__breadcrumb-current,
+[data-theme-mode=light] .page-title,
+[data-theme-mode=light] .sidebar-title {
+	color: #7a5c28 !important;
+}
+
+/* §K   浅色模式：代码/表格 ─────────────────────────────────────────── */
+[data-theme-mode=light] pre,
+[data-theme-mode=light] code {
+	background: rgba(140, 110, 50, 0.05) !important;
+	border-color: rgba(140, 110, 50, 0.10) !important;
+	color: #2d2014 !important;
+}
+[data-theme-mode=light] table th {
+	background: rgba(140, 110, 50, 0.08) !important;
+	color: #5a3e18 !important;
+	border-color: rgba(140, 110, 50, 0.12) !important;
+}
+[data-theme-mode=light] table td {
+	border-color: rgba(140, 110, 50, 0.08) !important;
+	color: #2d2014 !important;
+}
+[data-theme-mode=light] table tr:nth-child(even) td {
+	background: rgba(140, 110, 50, 0.03) !important;
+}
+
+/* ── end Tranche 15 light mode ──────────────────────────────────────── */
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
+   Tranche 16 v6 · 不良人总谱 · 水墨意境装饰层（修正选择器版）
+   正确类名: buli-army-section / buli-army-hdr / buli-army-task / buli-army-ev
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T1  全局背景：云纹 + 菱格 + 光晕
+   ───────────────────────────────────────────────────────────────────────── */
+body.lpt-workbench {
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160'%3E %3Cpath d='M0,75 C38,32 76,32 100,55 C124,78 148,100 178,75 C208,50 244,32 320,75' fill='none' stroke='rgba(201%2C168%2C76%2C0.14)' stroke-width='2'/%3E %3Cpath d='M0,112 C38,69 76,69 100,92 C124,115 148,137 178,112 C208,87 244,69 320,112' fill='none' stroke='rgba(201%2C168%2C76%2C0.08)' stroke-width='1.5'/%3E %3Ccircle cx='100' cy='55' r='18' fill='none' stroke='rgba(201%2C168%2C76%2C0.10)' stroke-width='1'/%3E %3Ccircle cx='178' cy='75' r='12' fill='none' stroke='rgba(201%2C168%2C76%2C0.08)' stroke-width='0.8'/%3E %3Ccircle cx='100' cy='55' r='5' fill='rgba(201%2C168%2C76%2C0.07)'/%3E %3Ccircle cx='178' cy='75' r='3.5' fill='rgba(201%2C168%2C76%2C0.06)'/%3E %3C/svg%3E")
+			0 0 / 320px 160px repeat,
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E %3Cpath d='M24 4 L44 24 L24 44 L4 24 Z' fill='none' stroke='rgba(201%2C168%2C76%2C0.07)' stroke-width='0.8'/%3E %3Ccircle cx='24' cy='24' r='2.5' fill='rgba(201%2C168%2C76%2C0.05)'/%3E %3C/svg%3E")
+			0 0 / 48px 48px repeat,
+		radial-gradient(ellipse 64% 48% at 0% 0%, rgba(139,0,0,0.13), transparent),
+		radial-gradient(ellipse 50% 38% at 100% 100%, rgba(201,168,76,0.10), transparent),
+		linear-gradient(160deg, #0d1224 0%, #0a0e1c 65%, #090d18 100%);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T2  左侧导航：竹节纹 + 三线界栏
+   ───────────────────────────────────────────────────────────────────────── */
+.shell-nav {
+	position: relative;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='60'%3E %3Crect x='4' y='0' width='12' height='5' rx='2' fill='rgba(80%2C120%2C60%2C0.12)'/%3E %3Cline x1='1' y1='5' x2='19' y2='5' stroke='rgba(201%2C168%2C76%2C0.22)' stroke-width='1.2'/%3E %3Cline x1='10' y1='5' x2='10' y2='58' stroke='rgba(100%2C140%2C80%2C0.08)' stroke-width='0.8'/%3E %3Crect x='4' y='55' width='12' height='5' rx='2' fill='rgba(80%2C120%2C60%2C0.08)'/%3E %3Cline x1='1' y1='55' x2='19' y2='55' stroke='rgba(201%2C168%2C76%2C0.14)' stroke-width='0.8'/%3E %3C/svg%3E") 0 0 / 20px 60px repeat,
+		radial-gradient(circle at top left, rgba(201,168,76,0.08), transparent 24%),
+		linear-gradient(180deg, rgba(11,16,32,0.98), rgba(13,18,32,0.98)) !important;
+}
+.shell-nav::after {
+	content: "";
+	position: absolute;
+	top: 0; right: 0; bottom: 0; width: 6px;
+	background: linear-gradient(90deg,
+		transparent 0px,
+		rgba(201,168,76,0.62) 0px,   rgba(201,168,76,0.62) 1.5px,
+		rgba(11,16,32,0.92)  1.5px,  rgba(11,16,32,0.92)  3.5px,
+		rgba(201,168,76,0.30) 3.5px, rgba(201,168,76,0.30) 4.5px,
+		transparent 4.5px
+	);
+	pointer-events: none;
+	z-index: 100;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T3  顶栏：顶金线 + 底波纹金线
+   ───────────────────────────────────────────────────────────────────────── */
+.topbar {
+	position: relative;
+	border-top: 1.5px solid rgba(201,168,76,0.32) !important;
+}
+.topbar::after {
+	content: "";
+	position: absolute;
+	left: 0; right: 0; bottom: -6px; height: 6px;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='6'%3E%3Cpath d='M0 3 Q7.5 0.6 15 3 Q22.5 5.4 30 3 Q37.5 0.6 45 3 Q52.5 5.4 60 3' fill='none' stroke='%23c9a84c' stroke-opacity='0.60' stroke-width='1.8'/%3E%3C/svg%3E")
+			0 0 / 60px 6px repeat-x;
+	pointer-events: none;
+	z-index: 20;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T4  右侧面板：水墨山水底色（月圆 + 三层山 + 水面 + 晨雾）
+   山峰中心定在面板 72-82% 高处（可透过半透明内容显现）
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel.buli-integrated-host {
+	border-left: none !important;
+	box-shadow:
+		inset  1px 0 0 rgba(201,168,76,0.55),
+		inset  3px 0 0 rgba(11,16,32,0.88),
+		inset  4px 0 0 rgba(201,168,76,0.22),
+		0 0 36px rgba(0,0,0,0.28) !important;
+	background:
+		/* 月晕外漫（更宽） */
+		radial-gradient(circle 120px at 82% 12%, rgba(201,168,76,0.14), transparent),
+		/* 月圆主体（更亮 更大） */
+		radial-gradient(circle 52px at 82% 12%, rgba(255,252,210,0.70) 0%, rgba(240,215,130,0.42) 38%, rgba(210,180,90,0.15) 62%, transparent 78%),
+		/* 远山（浅蓝灰 — 远山淡） */
+		radial-gradient(ellipse 95% 18% at 50% 70%, rgba(42,62,120,0.72) 0%, transparent 55%),
+		/* 中山·左峰（中蓝灰） */
+		radial-gradient(ellipse 60% 26% at 20% 78%, rgba(28,42,88,0.85) 0%, transparent 50%),
+		/* 中山·右峰（中蓝灰） */
+		radial-gradient(ellipse 55% 24% at 80% 76%, rgba(25,38,82,0.82) 0%, transparent 48%),
+		/* 近山·主峰（深蓝 — 近山深） */
+		radial-gradient(ellipse 68% 30% at 50% 87%, rgba(10,16,38,0.96) 0%, transparent 52%),
+		/* 江雾横带（月光漫散） */
+		radial-gradient(ellipse 100% 8% at 50% 64%, rgba(38,55,110,0.22), transparent 100%),
+		/* 水面倒影 */
+		linear-gradient(0deg, rgba(5,8,18,0.94) 0%, rgba(8,12,28,0.50) 14%, transparent 36%),
+		/* 顶部金晖 */
+		radial-gradient(ellipse 45% 32% at top right, rgba(201,168,76,0.09), transparent 60%),
+		/* 基础深夜天空 */
+		linear-gradient(180deg, rgba(7,10,22,0.99) 0%, rgba(9,13,26,0.99) 55%, rgba(8,11,22,0.99) 100%) !important;
+	position: relative;
+}
+/* 左上角大钩 */
+#buli-team-panel.buli-integrated-host::before {
+	content: "";
+	position: absolute;
+	top: 12px; left: 12px;
+	width: 24px; height: 24px;
+	border-top:  2.5px solid rgba(201,168,76,0.72);
+	border-left: 2.5px solid rgba(201,168,76,0.72);
+	border-radius: 4px 0 0 0;
+	pointer-events: none;
+	z-index: 9;
+}
+/* 右下角大钩 */
+#buli-team-panel.buli-integrated-host::after {
+	content: "";
+	position: absolute;
+	bottom: 12px; right: 12px;
+	width: 24px; height: 24px;
+	border-bottom: 2.5px solid rgba(201,168,76,0.48);
+	border-right:  2.5px solid rgba(201,168,76,0.48);
+	border-radius: 0 0 4px 0;
+	pointer-events: none;
+	z-index: 9;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T4c  深色模式·山水画层 v3：对称三峰 SVG 贝塞尔曲线
+   近山 rgba(18,30,82,0.82) ≫ 背景 rgba(7,10,22) — 色差大，轮廓清晰
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-main {
+	position: relative !important;
+}
+#buli-team-panel .buli-main::before {
+	content: none !important;
+}
+/* SVG 墨山贴在 buli-scroll 背景底部 */
+#buli-team-panel .buli-scroll {
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260' preserveAspectRatio='none'%3E %3Cdefs%3E  %3CradialGradient id='moon' cx='88%25' cy='8%25' r='10%25'%3E   %3Cstop offset='0%25' stop-color='rgba(255,250,200,0.68)'/%3E   %3Cstop offset='50%25' stop-color='rgba(255,235,150,0.22)'/%3E   %3Cstop offset='100%25' stop-color='rgba(255,235,150,0.0)'/%3E  %3C/radialGradient%3E  %3ClinearGradient id='water' x1='0' y1='0' x2='0' y2='1'%3E   %3Cstop offset='0%25' stop-color='rgba(44,72,155,0.0)'/%3E   %3Cstop offset='100%25' stop-color='rgba(44,72,155,0.32)'/%3E  %3C/linearGradient%3E %3C/defs%3E %3C!-- 月晕 --%3E %3Cellipse cx='350' cy='22' rx='42' ry='42' fill='url(%23moon)'/%3E %3C!-- 远山: 淡蓝，山峰偏左中，y 起止在 185 左右 --%3E %3Cpath d='M-1,185  C 25,165 50,148 80,132  C 110,116 130,128 160,115  C 190,102 220,114 255,125  C 285,134 310,128 340,138  C 365,146 386,155 401,160  L 401,260 L -1,260 Z'  fill='rgba(55,85,168,0.28)'/%3E %3C!-- 中山: 中蓝，山峰偏右中 --%3E %3Cpath d='M-1,208  C 20,192 42,180 68,162  C 95,144 115,158 142,142  C 170,126 198,138 228,148  C 255,157 278,145 305,152  C 328,158 360,170 401,178  L 401,260 L -1,260 Z'  fill='rgba(40,65,145,0.48)'/%3E %3C!-- 近山: 深蓝，两峰，最明显 --%3E %3Cpath d='M-1,232  C 18,218 38,205 62,188  C 86,172 104,185 128,168  C 152,151 172,163 198,170  C 220,176 240,165 264,155  C 290,144 315,158 345,172  C 368,182 388,190 401,194  L 401,260 L -1,260 Z'  fill='rgba(18,30,82,0.82)'/%3E %3C!-- 水面 --%3E %3Crect x='-1' y='245' width='402' height='15' fill='url(%23water)'/%3E %3Cline x1='20' y1='249' x2='90' y2='249' stroke='rgba(80,120,210,0.22)' stroke-width='0.8'/%3E %3Cline x1='130' y1='253' x2='215' y2='253' stroke='rgba(80,120,210,0.15)' stroke-width='0.6'/%3E %3Cline x1='265' y1='250' x2='360' y2='250' stroke='rgba(80,120,210,0.18)' stroke-width='0.7'/%3E%3C/svg%3E") !important;
+	background-size: 100% 55% !important;
+	background-repeat: no-repeat !important;
+	background-position: center bottom !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T4d  中间聊天区：古风意境全面美化 v2
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* ── 聊天区底层竹影背景（双侧竹茎，更密竹节和竹叶） ── */
+.content {
+	position: relative;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='480'%3E  %3Cline x1='18' y1='0' x2='14' y2='480' stroke='rgba(80,120,55,0.06)' stroke-width='5'/%3E  %3Cline x1='24' y1='0' x2='20' y2='480' stroke='rgba(80,120,55,0.04)' stroke-width='2'/%3E  %3Cline x1='12' y1='60'  x2='30' y2='60'  stroke='rgba(130,190,80,0.08)' stroke-width='1.4'/%3E  %3Cline x1='12' y1='140' x2='30' y2='140' stroke='rgba(130,190,80,0.07)' stroke-width='1.4'/%3E  %3Cline x1='12' y1='220' x2='30' y2='220' stroke='rgba(130,190,80,0.065)' stroke-width='1.4'/%3E  %3Cline x1='12' y1='300' x2='30' y2='300' stroke='rgba(130,190,80,0.06)' stroke-width='1.2'/%3E  %3Cline x1='12' y1='380' x2='30' y2='380' stroke='rgba(130,190,80,0.055)' stroke-width='1.2'/%3E  %3Cline x1='12' y1='455' x2='30' y2='455' stroke='rgba(130,190,80,0.050)' stroke-width='1.0'/%3E  %3Cline x1='18' y1='52' x2='54' y2='34' stroke='rgba(100,155,65,0.072)' stroke-width='1.6'/%3E  %3Cline x1='18' y1='56' x2='60' y2='42' stroke='rgba(100,155,65,0.055)' stroke-width='1.1'/%3E  %3Cline x1='18' y1='132' x2='50' y2='116' stroke='rgba(100,155,65,0.062)' stroke-width='1.5'/%3E  %3Cline x1='18' y1='212' x2='55' y2='198' stroke='rgba(100,155,65,0.055)' stroke-width='1.3'/%3E  %3Cline x1='18' y1='292' x2='52' y2='277' stroke='rgba(100,155,65,0.048)' stroke-width='1.2'/%3E  %3Cline x1='18' y1='372' x2='50' y2='356' stroke='rgba(100,155,65,0.042)' stroke-width='1.0'/%3E  %3Cline x1='184' y1='0' x2='180' y2='480' stroke='rgba(80,120,55,0.040)' stroke-width='3'/%3E  %3Cline x1='188' y1='0' x2='185' y2='480' stroke='rgba(80,120,55,0.028)' stroke-width='1.5'/%3E  %3Cline x1='188' y1='90'  x2='178' y2='72' stroke='rgba(100,155,65,0.040)' stroke-width='1.1'/%3E  %3Cline x1='188' y1='200' x2='176' y2='182' stroke='rgba(100,155,65,0.035)' stroke-width='1.0'/%3E  %3Cline x1='188' y1='320' x2='175' y2='302' stroke='rgba(100,155,65,0.032)' stroke-width='0.9'/%3E%3C/svg%3E")
+			0 0 / 200px 480px repeat-y !important;
+}
+
+/* ── 江湖水印：超大书法字，中心漂浮，低饱和金色 ── */
+.content::before {
+	content: "江湖";
+	position: absolute;
+	/* 水平居中偏右 */
+	right: 8%;
+	/* 垂直居中（用 top+transform） */
+	top: 50%;
+	transform: translateY(-50%);
+	/* 超大书法字 */
+	font-size: 148px;
+	/* @font-face 降级链：花园明朝 → 宋 → 默认衬线 */
+	font-family: "HanaMinA", "Noto Serif CJK SC", "Noto Serif SC",
+	             "Source Han Serif SC", "华文宋体", "STSong",
+	             "PingFang SC", "SimSun", serif;
+	font-weight: 900;
+	/* 金色淡入 */
+	color: rgba(201,168,76,0.082);
+	pointer-events: none;
+	z-index: 0;
+	line-height: 1.0;
+	user-select: none;
+	writing-mode: vertical-rl;
+	letter-spacing: 0.15em;
+	/* 轻微文字阴影增强字形感 */
+	text-shadow:
+		0 0 40px rgba(201,168,76,0.10),
+		0 0 80px rgba(201,168,76,0.05);
+}
+
+/* ── 顶部 dashboard-header：金线装饰 + 面包屑宋体 ── */
+.dashboard-header {
+	position: relative;
+	border-bottom: 1px solid rgba(201,168,76,0.18) !important;
+	background: linear-gradient(180deg,
+		rgba(201,168,76,0.05) 0%,
+		transparent 100%
+	) !important;
+}
+.dashboard-header::after {
+	content: "";
+	position: absolute;
+	bottom: -3px; left: 0; right: 0; height: 3px;
+	background: linear-gradient(90deg,
+		transparent 0%,
+		rgba(201,168,76,0.30) 20%,
+		rgba(201,168,76,0.55) 50%,
+		rgba(201,168,76,0.30) 80%,
+		transparent 100%
+	);
+	pointer-events: none;
+}
+.dashboard-header__breadcrumb-current,
+.page-title {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	letter-spacing: 0.10em !important;
+	color: rgba(224,191,104,0.90) !important;
+}
+.dashboard-header__breadcrumb-link {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	color: rgba(201,168,76,0.62) !important;
+}
+.dashboard-header__breadcrumb-sep {
+	color: rgba(201,168,76,0.38) !important;
+}
+
+/* ── agent-header（会话顶部代理信息行）── */
+.agent-header {
+	position: relative;
+	border-bottom: 1px solid rgba(201,168,76,0.12) !important;
+	background: linear-gradient(180deg,
+		rgba(201,168,76,0.04) 0%, transparent 100%
+	) !important;
+}
+
+/* ── chat-divider 时间分隔线：双线菱形 ── */
+.chat-divider {
+	margin: 10px 0 !important;
+}
+.chat-divider__line {
+	background: rgba(201,168,76,0.25) !important;
+	height: 1px !important;
+}
+.chat-divider__label {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	color: rgba(201,168,76,0.55) !important;
+	letter-spacing: 0.16em !important;
+	font-size: 10px !important;
+	padding: 0 12px !important;
+	position: relative;
+}
+.chat-divider__label::before {
+	content: "◆";
+	margin-right: 6px;
+	font-size: 7px;
+	color: rgba(201,168,76,0.65);
+	vertical-align: 1px;
+}
+.chat-divider__label::after {
+	content: "◆";
+	margin-left: 6px;
+	font-size: 7px;
+	color: rgba(201,168,76,0.65);
+	vertical-align: 1px;
+}
+
+/* ── 聊天气泡：金色左边条 + 深底描边 ── */
+.chat-line.assistant .chat-bubble,
+.chat-group.assistant .chat-bubble,
+.chat-group.other .chat-bubble,
+.chat-group.tool .chat-bubble {
+	background: rgba(17,24,43,0.88) !important;
+	border: 1px solid rgba(201,168,76,0.10) !important;
+	border-left: 2.5px solid rgba(201,168,76,0.45) !important;
+	border-radius: 2px 6px 6px 2px !important;
+	box-shadow:
+		-1px 0 8px rgba(201,168,76,0.10),
+		0 1px 4px rgba(0,0,0,0.25) !important;
+}
+.chat-line.user .chat-bubble,
+.chat-group.user .chat-bubble {
+	background: rgba(24,32,56,0.82) !important;
+	border: 1px solid rgba(201,168,76,0.14) !important;
+	border-right: 2.5px solid rgba(201,168,76,0.35) !important;
+	border-radius: 6px 2px 2px 6px !important;
+}
+
+/* ── 发送人名称：金色宋体 ── */
+.chat-sender-name {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	color: rgba(201,168,76,0.78) !important;
+	letter-spacing: 0.08em !important;
+	font-weight: 700 !important;
+}
+
+/* ── 时间戳：淡金色宋体 ── */
+.chat-stamp,
+.chat-group-timestamp {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	color: rgba(201,168,76,0.38) !important;
+	letter-spacing: 0.06em !important;
+	font-size: 9px !important;
+}
+
+/* ── chat-tool-card 工具卡片：卷宗折叠感 ── */
+.chat-tool-card {
+	border: 1px solid rgba(201,168,76,0.18) !important;
+	border-top: 2px solid rgba(201,168,76,0.38) !important;
+	border-radius: 2px 2px 4px 4px !important;
+	background: rgba(14,20,38,0.92) !important;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.28) !important;
+}
+.chat-tool-card__header {
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.10) 0%,
+		rgba(201,168,76,0.03) 60%,
+		transparent 100%
+	) !important;
+	border-bottom: 1px solid rgba(201,168,76,0.12) !important;
+}
+.chat-tool-card__title {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	color: rgba(201,168,76,0.82) !important;
+	letter-spacing: 0.06em !important;
+}
+.chat-tool-card__status {
+	border-left: 2px solid rgba(201,168,76,0.35) !important;
+	padding-left: 6px !important;
+}
+
+/* ── chat-tool-msg-summary 工具摘要行 ── */
+.chat-tool-msg-summary__label {
+	font-family: "Noto Serif SC", "STSong", serif !important;
+	color: rgba(201,168,76,0.65) !important;
+	letter-spacing: 0.08em !important;
+}
+
+/* ── 输入框区域：古风底边 + 淡金底纹 ── */
+.agent-chat__input,
+.chat-compose,
+.chat-composer {
+	border-top: 1.5px solid rgba(201,168,76,0.28) !important;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E  %3Crect x='2' y='2' width='56' height='56' rx='4' fill='none'stroke='rgba(201,168,76,0.06)' stroke-width='0.8' stroke-dasharray='4,3'/%3E  %3Cline x1='30' y1='2' x2='30' y2='58' stroke='rgba(201,168,76,0.03)' stroke-width='0.5'/%3E  %3Cline x1='2' y1='30' x2='58' y2='30' stroke='rgba(201,168,76,0.03)' stroke-width='0.5'/%3E%3C/svg%3E") 0 0 / 60px 60px repeat,
+		linear-gradient(180deg,
+			rgba(9,14,28,0.96) 0%,
+			rgba(11,16,32,0.98) 100%
+		) !important;
+}
+.agent-chat__input::before,
+.chat-compose::before {
+	content: "\25C6  令\3000\3000\3000\3000\3000\3000\3000\3000\3000\3000\25C6";
+	display: block;
+	text-align: center;
+	font-size: 7px;
+	letter-spacing: 0.30em;
+	color: rgba(201,168,76,0.28);
+	padding: 3px 0 0;
+	font-family: "Noto Serif SC", serif;
+	pointer-events: none;
+}
+
+/* ── chat-controls 模型选择栏 ── */
+.chat-controls {
+	border-bottom: 1px solid rgba(201,168,76,0.12) !important;
+}
+.chat-controls__separator {
+	background: rgba(201,168,76,0.22) !important;
+}
+
+/* ── chat-header 会话信息头 ── */
+.chat-header {
+	position: relative;
+	background: linear-gradient(180deg,
+		rgba(201,168,76,0.05) 0%, transparent 100%
+	) !important;
+	border-bottom: 1px solid rgba(201,168,76,0.15) !important;
+}
+
+/* ── new-messages 提示条 ── */
+.chat-new-messages {
+	background: rgba(201,168,76,0.14) !important;
+	color: rgba(224,191,104,0.88) !important;
+	border: 1px solid rgba(201,168,76,0.28) !important;
+	font-family: "Noto Serif SC", serif !important;
+	letter-spacing: 0.10em !important;
+}
+
+/* ── chat-thinking 思考中动效 ── */
+.chat-thinking {
+	color: rgba(201,168,76,0.55) !important;
+	font-family: "Noto Serif SC", serif !important;
+	letter-spacing: 0.14em !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T5  面板卷首：玉轴（厚实圆柱 + 流光动效）+ 铭文
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-head {
+	position: relative !important;
+	padding-top: 22px !important;
+	background: linear-gradient(180deg,
+		rgba(201,168,76,0.10) 0%,
+		rgba(201,168,76,0.04) 55%,
+		transparent 100%
+	) !important;
+	border-bottom: 1px solid rgba(201,168,76,0.22) !important;
+	margin-bottom: 2px !important;
+}
+#buli-team-panel .buli-head::before {
+	content: "";
+	position: absolute;
+	top: 6px; left: 10px; right: 10px; height: 10px;
+	background: linear-gradient(180deg,
+		rgba(255,242,185,0.42) 0%,
+		rgba(224,191,104,0.78) 18%,
+		rgba(201,168,76,0.68) 45%,
+		rgba(148,112,32,0.55) 72%,
+		rgba(201,168,76,0.30) 100%
+	);
+	border-radius: 5px;
+	box-shadow:
+		0 0 0 1px rgba(201,168,76,0.28),
+		0 3px 10px rgba(0,0,0,0.55),
+		inset 0 1px 3px rgba(255,250,215,0.35);
+	pointer-events: none;
+	animation: gufeng-roller-glow 4s ease-in-out infinite;
+}
+#buli-team-panel .buli-head::after {
+	content: "\25C6  \4E0D\826F\4EBA\603B\8C31  \25C6";
+	position: absolute;
+	top: 2px; left: 0; right: 0;
+	text-align: center;
+	font-size: 7.5px;
+	letter-spacing: 0.40em;
+	color: rgba(224,191,104,0.62);
+	font-family: "Noto Serif SC", "PingFang SC", "STSong", serif;
+	pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T6  面板标题：书名号 + 宋体
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-title {
+	font-family: "Noto Serif SC", "PingFang SC", "STSong", "Songti SC", serif !important;
+	letter-spacing: 0.10em !important;
+	font-size: 14px !important;
+}
+#buli-team-panel .buli-title::before {
+	content: "\300A";
+	opacity: 0.58;
+	font-size: 0.85em;
+	font-weight: 400;
+	margin-right: 1px;
+}
+#buli-team-panel .buli-title::after {
+	content: "\300B";
+	opacity: 0.58;
+	font-size: 0.85em;
+	font-weight: 400;
+	margin-left: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T7  竖排 Tab：宋体 + 活跃金光竖纹
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-tab-lbl {
+	font-family: "Noto Serif SC", "PingFang SC", serif !important;
+	letter-spacing: 0.20em !important;
+	font-size: 10px !important;
+}
+#buli-team-panel .buli-tab.active {
+	position: relative;
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.18) 0%,
+		rgba(201,168,76,0.06) 100%
+	) !important;
+}
+#buli-team-panel .buli-tab.active::before {
+	content: "" !important;
+	position: absolute;
+	top: 18%; bottom: 18%; left: 0; width: 3px;
+	background: linear-gradient(180deg,
+		transparent 0%,
+		#c9a84c 25%,
+		#e0bf68 50%,
+		#c9a84c 75%,
+		transparent 100%
+	);
+	box-shadow: 0 0 10px rgba(201,168,76,0.65);
+	border-radius: 0 2px 2px 0;
+	pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T8  ★ 段落分隔标题 (buli-army-section) ★
+   JS 原样：灰字小caps，弱线
+   我们：金色左粗边 + 渐变底色 + 宋体 → 章节令牌感
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-army-section {
+	color: rgba(201,168,76,0.88) !important;
+	font-family: "Noto Serif SC", "PingFang SC", serif !important;
+	letter-spacing: 0.18em !important;
+	text-transform: none !important;
+	font-weight: 700 !important;
+	font-size: 10.5px !important;
+	padding: 3px 8px 3px 10px !important;
+	margin: 12px 0 8px !important;
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.14) 0%,
+		rgba(201,168,76,0.05) 60%,
+		transparent 100%
+	) !important;
+	border-left: 3px solid rgba(201,168,76,0.72) !important;
+	border-radius: 0 2px 2px 0 !important;
+}
+/* Override the JS-injected ::after (faint divider line → gold line) */
+#buli-team-panel .buli-army-section::after {
+	background: linear-gradient(90deg, rgba(201,168,76,0.38), transparent) !important;
+	height: 1px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T9  ★ 天罡分组头 (buli-army-hdr) ★
+   天佑星·石瑶 行令中·消息数 → 金色左竖条 + 淡金底色
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-army-hdr {
+	position: relative;
+	border-left: 3px solid rgba(201,168,76,0.38) !important;
+	padding-left: 10px !important;
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.07) 0%,
+		transparent 65%
+	) !important;
+	border-radius: 0 6px 6px 0 !important;
+}
+/* 活跃发令中 → 金色更亮 */
+#buli-team-panel .buli-army-hdr.on {
+	border-left-color: rgba(224,191,104,0.72) !important;
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.14) 0%,
+		rgba(201,168,76,0.04) 65%,
+		transparent 100%
+	) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T10  ★ 任务卡 (buli-army-task) ★
+   执行中(live) → 金色左粗边；完成(done) → 翡翠色；失败(failed) → 玄红
+   注意：overflow:hidden，不用 ::before/::after
+   ───────────────────────────────────────────────────────────────────────── */
+/* live 任务：3px 金色左边框 */
+#buli-team-panel .buli-army-task.live {
+	border-left: 3px solid rgba(224,191,104,0.78) !important;
+	box-shadow: -2px 0 12px rgba(201,168,76,0.20), 0 1px 6px rgba(0,0,0,0.30) !important;
+}
+/* done 任务：翡翠左边框，轻微淡出已完成感 */
+#buli-team-panel .buli-army-task.done {
+	border-left: 3px solid rgba(74,163,111,0.55) !important;
+}
+/* failed：玄红左边框 */
+#buli-team-panel .buli-army-task.failed {
+	border-left: 3px solid rgba(192,74,74,0.62) !important;
+}
+/* 所有任务头部降低不透明度 → 山水底色可透出 */
+#buli-team-panel .buli-army-task-hdr {
+	background: rgba(14,20,40,0.35) !important;
+}
+/* live 任务头部：金晕背景 */
+#buli-team-panel .buli-army-task.live .buli-army-task-hdr {
+	background: rgba(201,168,76,0.12) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T11  军令目标 (buli-army-obj)：四角回纹（overflow非hidden）
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-army-obj {
+	position: relative !important;
+	border: 1px solid rgba(201,168,76,0.28) !important;
+	background: linear-gradient(135deg,
+		rgba(17,24,43,0.92) 0%,
+		rgba(14,20,38,0.95) 100%
+	) !important;
+}
+#buli-team-panel .buli-army-obj::before {
+	content: "";
+	position: absolute;
+	top: 5px; left: 5px;
+	width: 14px; height: 14px;
+	border-top:  2px solid rgba(201,168,76,0.65);
+	border-left: 2px solid rgba(201,168,76,0.65);
+	border-radius: 2px 0 0 0;
+	pointer-events: none;
+}
+#buli-team-panel .buli-army-obj::after {
+	content: "";
+	position: absolute;
+	bottom: 5px; right: 5px;
+	width: 14px; height: 14px;
+	border-bottom: 2px solid rgba(201,168,76,0.42);
+	border-right:  2px solid rgba(201,168,76,0.42);
+	border-radius: 0 0 2px 0;
+	pointer-events: none;
+}
+#buli-team-panel .buli-army-obj-label {
+	color: rgba(201,168,76,0.70) !important;
+	font-family: "Noto Serif SC", "PingFang SC", serif !important;
+	letter-spacing: 0.12em !important;
+	text-transform: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T12  天罡席位图标 (bp-seat-icon)：方形印章
+   ───────────────────────────────────────────────────────────────────────── */
+.bp-seat-icon {
+	border-radius: 5px !important;
+	border: 2px solid rgba(201,168,76,0.68) !important;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cline x1='14' y1='0' x2='14' y2='28' stroke='rgba(0%2C0%2C0%2C0.18)' stroke-width='1'/%3E%3Cline x1='0' y1='14' x2='28' y2='14' stroke='rgba(0%2C0%2C0%2C0.18)' stroke-width='1'/%3E%3C/svg%3E") center / 28px 28px no-repeat,
+		linear-gradient(135deg, rgba(201,168,76,0.28) 0%, rgba(150,110,25,0.18) 100%) !important;
+	box-shadow:
+		0 0 0 1px rgba(201,168,76,0.15),
+		0 0 0 5px rgba(201,168,76,0.05),
+		inset 0 1px 6px rgba(255,220,100,0.16),
+		0 4px 14px rgba(0,0,0,0.45) !important;
+	font-family: "Noto Serif SC", "PingFang SC", serif !important;
+	font-weight: 900 !important;
+	position: relative !important;
+	overflow: visible !important;
+	color: rgba(255,235,155,0.95) !important;
+}
+.bp-seat-icon::before {
+	content: "";
+	position: absolute;
+	inset: -5px;
+	border-radius: 9px;
+	border: 1.5px dashed rgba(201,168,76,0.30);
+	pointer-events: none;
+}
+.bp-seat-icon::after {
+	content: "\25C8";
+	position: absolute;
+	bottom: -5px; right: -5px;
+	font-size: 7px;
+	color: rgba(201,168,76,0.58);
+	pointer-events: none;
+	font-family: sans-serif;
+	line-height: 1;
+}
+/* live 席位：翡翠色印章 */
+.bp-seat.live .bp-seat-icon {
+	border-color: rgba(74,222,128,0.70) !important;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cline x1='14' y1='0' x2='14' y2='28' stroke='rgba(0%2C0%2C0%2C0.14)' stroke-width='1'/%3E%3Cline x1='0' y1='14' x2='28' y2='14' stroke='rgba(0%2C0%2C0%2C0.14)' stroke-width='1'/%3E%3C/svg%3E") center / 28px 28px no-repeat,
+		linear-gradient(135deg, rgba(74,222,128,0.28) 0%, rgba(40,160,80,0.16) 100%) !important;
+	box-shadow:
+		0 0 0 1px rgba(74,222,128,0.20),
+		0 0 0 5px rgba(74,222,128,0.06),
+		0 0 18px rgba(74,222,128,0.32),
+		inset 0 1px 6px rgba(120,255,180,0.18) !important;
+	color: rgba(180,255,210,0.95) !important;
+}
+.bp-seat.live .bp-seat-icon::before {
+	border-color: rgba(74,222,128,0.32);
+	animation: gufeng-seal-breathe 2.4s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T13  活动时间线 (buli-army-ev)：左渐变竖条
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-army-ev {
+	position: relative !important;
+	padding-left: 10px !important;
+}
+#buli-team-panel .buli-army-ev::before {
+	content: "";
+	position: absolute;
+	left: 0; top: 6px; bottom: 6px; width: 2px;
+	background: linear-gradient(180deg,
+		transparent 0%, rgba(201,168,76,0.42) 50%, transparent 100%
+	);
+	border-radius: 999px;
+	pointer-events: none;
+}
+#buli-team-panel .buli-army-ev.latest {
+	color: rgba(224,191,104,0.85) !important;
+}
+#buli-team-panel .buli-army-ev.latest::before {
+	background: linear-gradient(180deg,
+		transparent 0%, rgba(201,168,76,0.70) 50%, transparent 100%
+	);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T14  上下文压力条 (buli-army-pfill)：古色渐变
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-army-pfill {
+	background: linear-gradient(90deg, rgba(50,138,88,0.80), #4aa36f) !important;
+}
+#buli-team-panel .buli-army-pfill.warn {
+	background: linear-gradient(90deg, rgba(185,140,42,0.80), #d0923d) !important;
+}
+#buli-team-panel .buli-army-pfill.critical {
+	background: linear-gradient(90deg, rgba(120,0,0,0.90), #c04a4a) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T15  KV 键值对：左金线 + 渐变底
+   ───────────────────────────────────────────────────────────────────────── */
+.bp-kv {
+	border-left: 2.5px solid rgba(201,168,76,0.42) !important;
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.07) 0%,
+		rgba(201,168,76,0.02) 40%,
+		transparent 100%
+	) !important;
+}
+.bp-kv-label {
+	font-family: "Noto Serif SC", "PingFang SC", serif !important;
+	letter-spacing: 0.08em !important;
+	color: rgba(201,168,76,0.68) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T16  分隔符 (bp-divider)：双线
+   ───────────────────────────────────────────────────────────────────────── */
+.bp-divider {
+	color: rgba(201,168,76,0.65) !important;
+	font-family: "Noto Serif SC", "PingFang SC", serif !important;
+	letter-spacing: 0.18em !important;
+}
+.bp-divider::before {
+	content: "" !important;
+	flex: 1 !important;
+	border-top:    1px solid rgba(201,168,76,0.42) !important;
+	border-bottom: 1px solid rgba(201,168,76,0.14) !important;
+	margin-top: 1px !important;
+}
+.bp-divider::after {
+	content: "" !important;
+	flex: 1 !important;
+	border-top:    1px solid rgba(201,168,76,0.42) !important;
+	border-bottom: 1px solid rgba(201,168,76,0.14) !important;
+	margin-top: 1px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T17  品牌区：宋体 + 激活金浸光 + 底部卷首横线
+   ───────────────────────────────────────────────────────────────────────── */
+.sidebar-brand__title::after,
+.sidebar-brand__eyebrow::after,
+.nav-section__label-text::after,
+.nav-item__text::after,
+.sidebar-version__label::after {
+	font-family: "Noto Serif SC", "PingFang SC", "STSong", "Songti SC", serif !important;
+}
+.sidebar-brand__eyebrow::after  { letter-spacing: 0.22em !important; }
+.nav-section__label-text::after { letter-spacing: 0.14em !important; }
+.nav-item__text::after          { letter-spacing: 0.06em !important; }
+.nav-item.active,
+.nav-item--active {
+	background: linear-gradient(90deg,
+		rgba(201,168,76,0.22) 0%,
+		rgba(201,168,76,0.08) 100%
+	) !important;
+}
+.sidebar-brand {
+	position: relative;
+	padding-bottom: 12px;
+}
+.sidebar-brand::after {
+	content: "";
+	position: absolute;
+	bottom: 0; left: 10px; right: 10px; height: 1.5px;
+	background: linear-gradient(90deg,
+		transparent,
+		rgba(201,168,76,0.38) 15%,
+		rgba(201,168,76,0.72) 50%,
+		rgba(201,168,76,0.38) 85%,
+		transparent
+	);
+	pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T18  暗桩台：顶部波纹
+   ───────────────────────────────────────────────────────────────────────── */
+.buli-ankuangtai { position: relative; }
+.buli-ankuangtai::before {
+	content: "";
+	position: absolute;
+	top: 0; left: 0; right: 0; height: 2px;
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='2'%3E%3Cpath d='M0 1 Q5 0.2 10 1 Q15 1.8 20 1 Q25 0.2 30 1 Q35 1.8 40 1' fill='none' stroke='%23c9a84c' stroke-opacity='0.40' stroke-width='1'/%3E%3C/svg%3E")
+			0 0 / 40px 2px repeat-x;
+	pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T19  对话气泡：宣纸横纹
+   ───────────────────────────────────────────────────────────────────────── */
+.chat-line.assistant .chat-bubble,
+.chat-group.assistant .chat-bubble,
+.chat-group.other .chat-bubble,
+.chat-group.tool .chat-bubble {
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='32'%3E %3Cline x1='0' y1='31' x2='1' y2='31' stroke='rgba(201%2C168%2C76%2C0.04)' stroke-width='1'/%3E %3C/svg%3E")
+			0 0 / 1px 32px repeat,
+		rgba(17,24,43,0.88) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T20  buli-body 右上/左下角钩（面板整体四角）
+   ───────────────────────────────────────────────────────────────────────── */
+#buli-team-panel .buli-body {
+	position: relative !important;
+}
+#buli-team-panel .buli-body::before {
+	content: "";
+	position: absolute;
+	top: 0; right: 0;
+	width: 22px; height: 22px;
+	border-top:   2px solid rgba(201,168,76,0.42);
+	border-right: 2px solid rgba(201,168,76,0.42);
+	border-radius: 0 4px 0 0;
+	pointer-events: none;
+	z-index: 9;
+}
+#buli-team-panel .buli-body::after {
+	content: "";
+	position: absolute;
+	bottom: 0; left: 0;
+	width: 22px; height: 22px;
+	border-bottom: 2px solid rgba(201,168,76,0.28);
+	border-left:   2px solid rgba(201,168,76,0.28);
+	border-radius: 0 0 0 4px;
+	pointer-events: none;
+	z-index: 9;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T21  浅色模式·温润如玉 完整独立方案
+   色相：宣纸米白底 / 墨棕边框 / 翡翠绿点缀 / 水墨山水
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* 全局底色：宣纸 + 菱格暗纹 */
+[data-theme-mode=light] body.lpt-workbench {
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M24 4 L44 24 L24 44 L4 24 Z' fill='none' stroke='rgba(100%2C75%2C30%2C0.07)' stroke-width='0.8'/%3E%3C/svg%3E")
+			0 0 / 48px 48px repeat,
+		linear-gradient(160deg, #f5ede0 0%, #f0e8d6 50%, #ece0cc 100%) !important;
+}
+
+/* 导航：竹纸色 + 墨线边界 */
+[data-theme-mode=light] .shell-nav {
+	background: linear-gradient(180deg, #ede4cc 0%, #e8ddc4 100%) !important;
+}
+[data-theme-mode=light] .shell-nav::after {
+	background: linear-gradient(90deg,
+		transparent 0px,
+		rgba(80,55,18,0.72) 0px,    rgba(80,55,18,0.72) 1.5px,
+		rgba(240,232,215,0.95) 1.5px, rgba(240,232,215,0.95) 3.5px,
+		rgba(80,55,18,0.30) 3.5px,  rgba(80,55,18,0.30) 4.5px,
+		transparent 4.5px
+	) !important;
+}
+
+/* 顶栏底线 */
+[data-theme-mode=light] .topbar {
+	border-top: 1.5px solid rgba(80,55,18,0.28) !important;
+}
+[data-theme-mode=light] .topbar::after {
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='6'%3E%3Cpath d='M0 3 Q7.5 0.6 15 3 Q22.5 5.4 30 3 Q37.5 0.6 45 3 Q52.5 5.4 60 3' fill='none' stroke='%23705222' stroke-opacity='0.45' stroke-width='1.8'/%3E%3C/svg%3E")
+		0 0 / 60px 6px repeat-x !important;
+}
+
+/* 品牌区底线：金墨色 */
+[data-theme-mode=light] .sidebar-brand::after {
+	background: linear-gradient(90deg,
+		transparent, rgba(80,55,18,0.35) 15%, rgba(120,88,28,0.62) 50%,
+		rgba(80,55,18,0.35) 85%, transparent
+	) !important;
+}
+
+/* 导航激活项：翡翠色（温润如玉） */
+[data-theme-mode=light] .nav-item.active,
+[data-theme-mode=light] .nav-item--active {
+	background: linear-gradient(90deg,
+		rgba(50,110,70,0.18) 0%,
+		rgba(50,110,70,0.06) 100%
+	) !important;
+}
+
+/* 右侧面板：宣纸卷轴 + 水墨山水 */
+[data-theme-mode=light] #buli-team-panel.buli-integrated-host {
+	background:
+		/* 日晕 */
+		radial-gradient(circle 55px at 84% 11%, rgba(220,160,50,0.22) 0%, rgba(200,140,40,0.10) 50%, transparent 70%),
+		/* 宣纸底 */
+		linear-gradient(175deg, #f5ede0 0%, #f0e6d0 55%, #ebe0c8 100%) !important;
+	border-left: none !important;
+	box-shadow:
+		inset  1px 0 0 rgba(80,55,18,0.62),
+		inset  3px 0 0 rgba(240,232,215,0.95),
+		inset  4px 0 0 rgba(80,55,18,0.22),
+		0 0 28px rgba(0,0,0,0.10) !important;
+}
+/* 角钩：墨色 */
+[data-theme-mode=light] #buli-team-panel.buli-integrated-host::before {
+	border-top-color: rgba(80,55,18,0.68) !important;
+	border-left-color: rgba(80,55,18,0.68) !important;
+}
+[data-theme-mode=light] #buli-team-panel.buli-integrated-host::after {
+	border-bottom-color: rgba(80,55,18,0.45) !important;
+	border-right-color:  rgba(80,55,18,0.45) !important;
+}
+
+/* 玉轴：翠绿圆柱 */
+[data-theme-mode=light] #buli-team-panel .buli-head {
+	background: linear-gradient(180deg,
+		rgba(50,110,70,0.10) 0%, rgba(50,110,70,0.04) 55%, transparent 100%
+	) !important;
+	border-bottom: 1px solid rgba(80,55,18,0.20) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-head::before {
+	background: linear-gradient(180deg,
+		rgba(200,235,215,0.50) 0%,
+		rgba(80,160,110,0.85) 18%,
+		rgba(55,130,85,0.75) 45%,
+		rgba(35,95,60,0.58) 72%,
+		rgba(55,130,85,0.32) 100%
+	) !important;
+	box-shadow:
+		0 0 0 1px rgba(50,110,70,0.30),
+		0 3px 10px rgba(0,0,0,0.15),
+		inset 0 1px 3px rgba(200,255,225,0.40) !important;
+	animation: gufeng-roller-glow-light 4s ease-in-out infinite !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-head::after {
+	color: rgba(55,38,12,0.58) !important;
+}
+
+/* 面板标题：深墨色 */
+[data-theme-mode=light] #buli-team-panel .buli-title {
+	color: rgba(40,28,10,0.88) !important;
+}
+
+/* 竖排 Tab：翡翠激活条 */
+[data-theme-mode=light] #buli-team-panel .buli-tab.active {
+	background: linear-gradient(90deg,
+		rgba(50,110,70,0.18) 0%, rgba(50,110,70,0.06) 100%
+	) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-tab.active::before {
+	background: linear-gradient(180deg,
+		transparent 0%, #3a7a50 25%, #5aaa72 50%, #3a7a50 75%, transparent 100%
+	) !important;
+	box-shadow: 0 0 8px rgba(50,120,70,0.55) !important;
+}
+
+/* 章节标题：墨棕边框 */
+[data-theme-mode=light] #buli-team-panel .buli-army-section {
+	color: rgba(60,40,12,0.82) !important;
+	border-left-color: rgba(80,55,18,0.72) !important;
+	background: linear-gradient(90deg,
+		rgba(80,55,18,0.10) 0%, rgba(80,55,18,0.03) 60%, transparent 100%
+	) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-section::after {
+	background: linear-gradient(90deg, rgba(80,55,18,0.32), transparent) !important;
+}
+
+/* 分组头：墨色边框 */
+[data-theme-mode=light] #buli-team-panel .buli-army-hdr {
+	border-left-color: rgba(80,55,18,0.35) !important;
+	background: linear-gradient(90deg,
+		rgba(80,55,18,0.06) 0%, transparent 65%
+	) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-hdr.on {
+	border-left-color: rgba(55,115,72,0.70) !important;
+	background: linear-gradient(90deg,
+		rgba(50,110,70,0.12) 0%, transparent 65%
+	) !important;
+}
+
+/* 任务卡头部：浅亮宣纸 */
+[data-theme-mode=light] #buli-team-panel .buli-army-task-hdr {
+	background: rgba(240,230,210,0.72) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-task.live {
+	border-left-color: rgba(50,120,72,0.80) !important;
+	box-shadow: -2px 0 10px rgba(50,120,72,0.18), 0 1px 4px rgba(0,0,0,0.08) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-task.live .buli-army-task-hdr {
+	background: rgba(50,120,72,0.10) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-task.done {
+	border-left-color: rgba(74,163,111,0.55) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-task.failed {
+	border-left-color: rgba(192,74,74,0.55) !important;
+}
+
+/* 军令目标：宣纸卡片 */
+[data-theme-mode=light] #buli-team-panel .buli-army-obj {
+	border-color: rgba(80,55,18,0.25) !important;
+	background: rgba(248,242,230,0.90) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-obj::before,
+[data-theme-mode=light] #buli-team-panel .buli-army-obj::after {
+	border-color: rgba(80,55,18,0.55) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-obj-label {
+	color: rgba(60,40,12,0.72) !important;
+}
+
+/* 席位图标：翡翠色 */
+[data-theme-mode=light] .bp-seat-icon {
+	border-color: rgba(50,110,70,0.65) !important;
+	background: linear-gradient(135deg, rgba(50,110,70,0.22) 0%, rgba(35,85,55,0.14) 100%) !important;
+	color: rgba(20,60,35,0.92) !important;
+	box-shadow:
+		0 0 0 1px rgba(50,110,70,0.15),
+		0 0 0 5px rgba(50,110,70,0.05),
+		inset 0 1px 4px rgba(150,220,180,0.20),
+		0 3px 10px rgba(0,0,0,0.10) !important;
+}
+[data-theme-mode=light] .bp-seat-icon::before {
+	border-color: rgba(50,110,70,0.30) !important;
+}
+
+/* 活动时间线：墨棕竖条 */
+[data-theme-mode=light] #buli-team-panel .buli-army-ev::before {
+	background: linear-gradient(180deg,
+		transparent 0%, rgba(80,55,18,0.38) 50%, transparent 100%
+	) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-ev.latest {
+	color: rgba(50,110,60,0.82) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-ev.latest::before {
+	background: linear-gradient(180deg,
+		transparent 0%, rgba(50,110,60,0.62) 50%, transparent 100%
+	) !important;
+}
+
+/* 压力条：翡翠色系 */
+[data-theme-mode=light] #buli-team-panel .buli-army-pfill {
+	background: linear-gradient(90deg, rgba(40,120,75,0.72), #55b882) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-pfill.warn {
+	background: linear-gradient(90deg, rgba(170,120,30,0.80), #c88e30) !important;
+}
+[data-theme-mode=light] #buli-team-panel .buli-army-pfill.critical {
+	background: linear-gradient(90deg, rgba(140,30,30,0.85), #c04040) !important;
+}
+
+/* KV 对：墨棕左线 */
+[data-theme-mode=light] .bp-kv {
+	border-left-color: rgba(80,55,18,0.40) !important;
+	background: linear-gradient(90deg,
+		rgba(80,55,18,0.06) 0%, transparent 100%
+	) !important;
+}
+[data-theme-mode=light] .bp-kv-label {
+	color: rgba(60,42,14,0.65) !important;
+}
+
+/* 分隔符：墨色 */
+[data-theme-mode=light] .bp-divider {
+	color: rgba(60,42,14,0.60) !important;
+}
+[data-theme-mode=light] .bp-divider::before,
+[data-theme-mode=light] .bp-divider::after {
+	border-top-color:    rgba(80,55,18,0.38) !important;
+	border-bottom-color: rgba(80,55,18,0.12) !important;
+}
+
+/* 水墨山水（浅色模式独立） */
+[data-theme-mode=light] #buli-team-panel .buli-scroll {
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260' preserveAspectRatio='none'%3E %3Cdefs%3E  %3CradialGradient id='sun' cx='88%25' cy='10%25' r='12%25'%3E   %3Cstop offset='0%25' stop-color='rgba(220,160,50,0.38)'/%3E   %3Cstop offset='55%25' stop-color='rgba(200,140,40,0.12)'/%3E   %3Cstop offset='100%25' stop-color='rgba(200,140,40,0.0)'/%3E  %3C/radialGradient%3E  %3ClinearGradient id='water2' x1='0' y1='0' x2='0' y2='1'%3E   %3Cstop offset='0%25' stop-color='rgba(80,60,30,0.0)'/%3E   %3Cstop offset='100%25' stop-color='rgba(80,60,30,0.18)'/%3E  %3C/linearGradient%3E %3C/defs%3E %3C!-- 日晕 --%3E %3Cellipse cx='350' cy='25' rx='48' ry='48' fill='url(%23sun)'/%3E %3C!-- 远山: 最淡，水墨远山 --%3E %3Cpath d='M-1,180  C 25,160 55,142 85,126  C 115,110 138,124 165,110  C 195,96 225,110 258,122  C 288,132 315,124 342,135  C 368,144 388,152 401,158  L 401,260 L -1,260 Z'  fill='rgba(60,45,25,0.14)'/%3E %3C!-- 中山: 中墨 --%3E %3Cpath d='M-1,205  C 22,188 45,175 72,158  C 98,141 118,155 145,138  C 172,121 200,135 228,146  C 254,156 278,142 305,150  C 330,157 362,168 401,176  L 401,260 L -1,260 Z'  fill='rgba(45,32,15,0.28)'/%3E %3C!-- 近山: 浓墨，最明显 --%3E %3Cpath d='M-1,228  C 20,212 42,198 66,182  C 90,166 108,180 132,163  C 156,146 178,160 202,168  C 224,175 244,162 268,152  C 294,141 318,156 346,170  C 370,181 388,190 401,194  L 401,260 L -1,260 Z'  fill='rgba(28,18,8,0.42)'/%3E %3C!-- 水面倒影 --%3E %3Crect x='-1' y='242' width='402' height='18' fill='url(%23water2)'/%3E %3Cline x1='15' y1='246' x2='85' y2='246' stroke='rgba(80,60,30,0.16)' stroke-width='0.7'/%3E %3Cline x1='125' y1='250' x2='210' y2='250' stroke='rgba(80,60,30,0.12)' stroke-width='0.5'/%3E%3C/svg%3E") !important;
+	background-size: 100% 55% !important;
+	background-repeat: no-repeat !important;
+	background-position: center bottom !important;
+}
+
+/* 聊天区竹影 */
+[data-theme-mode=light] .content {
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='400'%3E %3Cline x1='22' y1='0' x2='18' y2='400' stroke='rgba(40,60,20,0.055)' stroke-width='4'/%3E %3Cline x1='28' y1='0' x2='24' y2='400' stroke='rgba(40,60,20,0.038)' stroke-width='2'/%3E %3Cline x1='15' y1='80' x2='32' y2='80' stroke='rgba(40,60,20,0.065)' stroke-width='1.2'/%3E %3Cline x1='15' y1='160' x2='32' y2='160' stroke='rgba(40,60,20,0.055)' stroke-width='1.2'/%3E %3Cline x1='15' y1='240' x2='32' y2='240' stroke='rgba(40,60,20,0.048)' stroke-width='1.2'/%3E %3Cline x1='15' y1='320' x2='32' y2='320' stroke='rgba(40,60,20,0.042)' stroke-width='1.2'/%3E %3Cline x1='22' y1='72' x2='55' y2='55' stroke='rgba(40,70,25,0.055)' stroke-width='1.5'/%3E %3Cline x1='22' y1='152' x2='52' y2='135' stroke='rgba(40,70,25,0.048)' stroke-width='1.4'/%3E %3Cline x1='22' y1='232' x2='56' y2='218' stroke='rgba(40,70,25,0.040)' stroke-width='1.2'/%3E %3Cline x1='165' y1='0' x2='162' y2='400' stroke='rgba(40,60,20,0.028)' stroke-width='2'/%3E%3C/svg%3E")
+			left center / 180px 400px repeat-y !important;
+}
+/* 江湖水印：深色版 */
+[data-theme-mode=light] .content::before {
+	color: rgba(60,42,14,0.055) !important;
+}
+
+/* 暗桩台：墨波纹 */
+[data-theme-mode=light] .buli-ankuangtai::before {
+	background:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='2'%3E%3Cpath d='M0 1 Q5 0.2 10 1 Q15 1.8 20 1 Q25 0.2 30 1 Q35 1.8 40 1' fill='none' stroke='%23705222' stroke-opacity='0.42' stroke-width='1'/%3E%3C/svg%3E")
+			0 0 / 40px 2px repeat-x !important;
+}
+
+/* 玉轴流光（浅色） */
+@keyframes gufeng-roller-glow-light {
+	0%, 100% {
+		box-shadow:
+			0 0 0 1px rgba(50,110,70,0.28),
+			0 3px 10px rgba(0,0,0,0.18),
+			inset 0 1px 3px rgba(200,255,220,0.40);
+	}
+	50% {
+		box-shadow:
+			0 0 0 1px rgba(50,110,70,0.55),
+			0 3px 18px rgba(0,0,0,0.20),
+			inset 0 1px 6px rgba(200,255,220,0.65),
+			0 0 22px rgba(50,120,70,0.28);
+	}
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T22  流光动效关键帧
+   ───────────────────────────────────────────────────────────────────────── */
+@keyframes gufeng-roller-glow {
+	0%, 100% {
+		box-shadow:
+			0 0 0 1px rgba(201,168,76,0.28),
+			0 3px 10px rgba(0,0,0,0.55),
+			inset 0 1px 3px rgba(255,250,215,0.35);
+	}
+	50% {
+		box-shadow:
+			0 0 0 1px rgba(201,168,76,0.52),
+			0 3px 18px rgba(0,0,0,0.58),
+			inset 0 1px 6px rgba(255,250,215,0.62),
+			0 0 26px rgba(201,168,76,0.30);
+	}
+}
+@keyframes gufeng-seal-breathe {
+	0%, 100% { opacity: 0.90; transform: scale(1);    }
+	50%       { opacity: 0.30; transform: scale(1.15); }
+}
+
+/* ── end Tranche 16 v6 不良人总谱·水墨丹青（修正选择器）──────────── */
+
+/* ── 天罡席位角色颜色编码 ──────────────────────────────────────────── */
+/* coder=蓝 / research=绿 / qa=橙 / reviewer=红 / frontend=紫 */
+.bp-seat-icon.coder {
+	background: rgba(91, 156, 246, 0.18) !important;
+	color: #5b9cf6 !important;
+}
+.bp-seat-icon.research {
+	background: rgba(82, 199, 122, 0.18) !important;
+	color: #52c77a !important;
+}
+.bp-seat-icon.qa {
+	background: rgba(245, 165, 74, 0.18) !important;
+	color: #f5a54a !important;
+}
+.bp-seat-icon.reviewer {
+	background: rgba(240, 106, 106, 0.18) !important;
+	color: #f06a6a !important;
+}
+.bp-seat-icon.frontend {
+	background: rgba(176, 140, 245, 0.18) !important;
+	color: #b08cf5 !important;
+}
+.bp-seat-icon.dev {
+	background: rgba(91, 156, 246, 0.15) !important;
+	color: #5b9cf6 !important;
+}
+.bp-seat-icon.code-assist {
+	background: rgba(91, 156, 246, 0.12) !important;
+	color: #7ab3f7 !important;
+}
+
+/* ── 实时活动指示点（脉冲动画） ─────────────────────────────────── */
+@keyframes bp-live-pulse {
+	0%, 100% { opacity: 1; transform: scale(1);   }
+	50%       { opacity: 0.4; transform: scale(0.7); }
+}
+.bp-live-dot {
+	position: absolute;
+	top: 1px;
+	right: 1px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--buli-status-live, #4ade80);
+	animation: bp-live-pulse 1.4s ease-in-out infinite;
+	pointer-events: none;
+}
+.bp-seat-icon {
+	position: relative;
+}
+
+/* ── 席位最后活动时间 ──────────────────────────────────────────────── */
+.bp-seat-time {
+	font-size: 10px;
+	color: var(--buli-text-2, #7f8aa1);
+	margin-top: 2px;
+	opacity: 0.7;
+}
+
+/* ── Session Key Tooltip ──────────────────────────────────────────── */
+@keyframes bp-tooltip-appear {
+	from { opacity: 0; transform: translateY(4px); }
+	to   { opacity: 1; transform: translateY(0);    }
+}
+.bp-seat[data-session-key]::after {
+	content: attr(data-session-key);
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(15, 16, 28, 0.96);
+	border: 1px solid rgba(201, 168, 76, 0.35);
+	color: rgba(211, 218, 232, 0.85);
+	font-size: 10px;
+	font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+	padding: 4px 8px;
+	border-radius: 5px;
+	white-space: nowrap;
+	max-width: 260px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+	opacity: 0;
+	z-index: 100;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+	transition: opacity 160ms;
+}
+.bp-seat[data-session-key]:hover::after {
+	opacity: 1;
+	animation: bp-tooltip-appear 160ms ease-out;
+}
+.bp-seat {
+	position: relative;
+}
+
+/* ── Copied 状态反馈 ─────────────────────────────────────────────── */
+@keyframes bp-copied-flash {
+	0%   { color: var(--buli-text, #d3dae8); }
+	30%  { color: #4ade80; }
+	100% { color: var(--buli-text, #d3dae8); }
+}
+.bp-seat-name[data-copied="1"] {
+	animation: bp-copied-flash 1.4s ease-out;
+}
+
+/* ── 行令中席位加强样式（呼吸光晕） ─────────────────────────────── */
+@keyframes bp-seat-glow {
+	0%, 100% { box-shadow: 0 2px 8px rgba(74, 222, 128, 0.15); }
+	50%       { box-shadow: 0 2px 14px rgba(74, 222, 128, 0.30); }
+}
+.bp-seat.live {
+	animation: bp-seat-glow 2.5s ease-in-out infinite;
+	border-left: 2px solid rgba(74, 222, 128, 0.4);
+}

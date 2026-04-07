@@ -33,6 +33,7 @@
 - 结构化记忆提取、路由、去重、验证和 TTL 分层
 - 团队派工、任务状态持久化和多角色协作编排
 - 可执行 skill 模板、工具 hook 和重试基础设施
+- 不良人总谱风格的 Control UI 扩展和智能体身份体系
 
 ## 快速开始
 
@@ -70,6 +71,22 @@ pnpm public:dashboard -- --no-open
 
 ```bash
 pnpm public:agent -- --message "hello"
+```
+
+## 不良人 UI 与身份
+
+公开版现在已经包含你本地那套不良人主题控制台扩展，加载入口在 [dist/control-ui/index.html](dist/control-ui/index.html)，核心文件包括：
+
+- [dist/control-ui/assets/teamTaskStore.js](dist/control-ui/assets/teamTaskStore.js): 不良人总谱状态仓、席位映射和 companion sprite 状态
+- [dist/control-ui/assets/buli-team-panel.js](dist/control-ui/assets/buli-team-panel.js): 右侧不良人总谱面板、天罡 roster、驿报和案卷视图
+- [dist/control-ui/assets/panel-layout-overrides.css](dist/control-ui/assets/panel-layout-overrides.css): 古风三栏布局、状态条和暗桩台视觉覆盖
+
+公开模板里的智能体身份也已经切换为不良人设定，详细列表见 [AGENT_IDENTITIES.md](AGENT_IDENTITIES.md)。
+
+如果你之前已经生成过本地 `.openclaw-public/openclaw.json`，想把 agent 身份一起刷新到新版模板，可执行：
+
+```bash
+pnpm public:setup -- --force
 ```
 
 ## 常见问题
@@ -114,12 +131,14 @@ pnpm public:token
 - [package.json](package.json): OpenClaw 包定义和公开版快捷脚本
 - [openclaw.mjs](openclaw.mjs): CLI 启动入口
 - [dist](dist): 预编译运行时代码
+- [dist/control-ui/index.html](dist/control-ui/index.html): Control UI 入口，现已自动加载不良人面板扩展
 - [docs](docs): 上游文档
 - [skills](skills): bundled skills
 - [workspace](workspace): 自定义增强层与公开版 workspace
 - [templates/openclaw.public.template.json](templates/openclaw.public.template.json): 脱敏配置模板
 - [scripts/setup-public-home.mjs](scripts/setup-public-home.mjs): 初始化本地状态目录
 - [scripts/run-public.mjs](scripts/run-public.mjs): 公开版命令包装器
+- [AGENT_IDENTITIES.md](AGENT_IDENTITIES.md): 默认公开版智能体身份与角色说明
 - [UPSTREAM_COMPARISON.md](UPSTREAM_COMPARISON.md): 上游对比和改进总结
 - [PUBLISHING.md](PUBLISHING.md): 发布到 GitHub 前的检查项
 

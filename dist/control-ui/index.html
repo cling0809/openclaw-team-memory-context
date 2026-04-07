@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenClaw Control</title>
+    <title>OpenClaw Control | 不良人总谱</title>
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
@@ -71,5 +71,51 @@
   </head>
   <body>
     <openclaw-app></openclaw-app>
+    <script type="module">
+      const PANEL_ASSET_VERSION = "public-buliang-ui-20260407";
+      const PANEL_SCRIPTS = [
+        `./assets/teamTaskStore.js?t=${PANEL_ASSET_VERSION}`,
+        `./assets/buli-team-panel.js?t=${PANEL_ASSET_VERSION}`,
+      ];
+      const PANEL_STYLE = `./assets/panel-layout-overrides.css?t=${PANEL_ASSET_VERSION}`;
+
+      function hasWorkbenchShell() {
+        return !!document.querySelector(".shell, main, aside.right-console");
+      }
+
+      function mountPanelAssets() {
+        if (window.__OPENCLAW_PANEL_ASSETS_LOADED__ === PANEL_ASSET_VERSION) return true;
+        window.__OPENCLAW_PANEL_ASSETS_LOADED__ = PANEL_ASSET_VERSION;
+
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.crossOrigin = "";
+        link.href = PANEL_STYLE;
+        document.head.appendChild(link);
+
+        for (const src of PANEL_SCRIPTS) {
+          import(src).catch((err) => {
+            console.error("[panel-loader] failed to import", src, err);
+          });
+        }
+        return true;
+      }
+
+      let attempts = 0;
+      const timer = setInterval(() => {
+        attempts += 1;
+        if (hasWorkbenchShell() && mountPanelAssets()) {
+          clearInterval(timer);
+        } else if (attempts > 80) {
+          clearInterval(timer);
+        }
+      }, 250);
+
+      window.addEventListener("DOMContentLoaded", () => {
+        if (hasWorkbenchShell()) {
+          mountPanelAssets();
+        }
+      });
+    </script>
   </body>
 </html>

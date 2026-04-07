@@ -85,11 +85,11 @@
       {
         "id": "main",
         "default": true,
-        "name": "Main Coordinator",
+        "name": "不良帅·李星云",
         "identity": {
-          "emoji": "🦞",
-          "name": "Main Coordinator",
-          "theme": "project orchestration"
+          "emoji": "⚔️",
+          "name": "不良帅·李星云（天暗星）",
+          "theme": "总控调度·不良帅"
         },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
@@ -102,11 +102,23 @@
       },
       {
         "id": "coder",
-        "name": "Coder",
+        "name": "天祐星·石瑶",
         "identity": {
-          "emoji": "🛠️",
-          "name": "Coder",
-          "theme": "implementation"
+          "emoji": "🛡️",
+          "name": "天祐星·石瑶",
+          "theme": "稳健的工程实现者"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__"
+      },
+      {
+        "id": "code-assist",
+        "name": "天速星·段成天",
+        "identity": {
+          "emoji": "⚡",
+          "name": "天速星·段成天",
+          "theme": "快速补位、读改并行的代码助手"
         },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
@@ -114,11 +126,11 @@
       },
       {
         "id": "research",
-        "name": "Research",
+        "name": "天慧星·慧明",
         "identity": {
-          "emoji": "📚",
-          "name": "Research",
-          "theme": "analysis"
+          "emoji": "📜",
+          "name": "天慧星·慧明",
+          "theme": "中文优先的资料分析师"
         },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
@@ -126,11 +138,11 @@
       },
       {
         "id": "frontend",
-        "name": "Frontend",
+        "name": "天巧星·上官云阙",
         "identity": {
           "emoji": "🎨",
-          "name": "Frontend",
-          "theme": "ui and polish"
+          "name": "天巧星·上官云阙",
+          "theme": "懂设计也能落代码的界面打磨者"
         },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
@@ -138,11 +150,11 @@
       },
       {
         "id": "qa",
-        "name": "QA",
+        "name": "天损星·陆佑劫",
         "identity": {
           "emoji": "🧪",
-          "name": "QA",
-          "theme": "verification"
+          "name": "天损星·陆佑劫",
+          "theme": "喜欢复现问题和守住回归线的验证者"
         },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
@@ -150,11 +162,11 @@
       },
       {
         "id": "reviewer",
-        "name": "Reviewer",
+        "name": "天罪星·镜心魔",
         "identity": {
-          "emoji": "🔍",
-          "name": "Reviewer",
-          "theme": "risk review"
+          "emoji": "👁️",
+          "name": "天罪星·镜心魔",
+          "theme": "专挑风险和漏洞的把关者"
         },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
