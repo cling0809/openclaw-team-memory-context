@@ -47,11 +47,35 @@ pnpm public:gateway
 - `public:onboard` 会自动带上本地状态目录、模板配置和本仓库的 `workspace/` 路径。
 - `public:gateway` 会用同一套本地配置启动 Gateway。
 
+当前状态：
+
+- 仓库已经包含可直接运行的 OpenClaw CLI 入口和预编译 `dist/`。
+- clone 下来后，按上面的步骤执行 `pnpm install` 和 `pnpm public:setup` 即可开始使用。
+- 本仓库默认把本地运行态写入 `.openclaw-public/`，不会污染版本库。
+
 如果你只想直接体验 agent：
 
 ```bash
 pnpm public:agent -- --message "hello"
 ```
+
+## 效果展览
+
+### 暗色主题主界面
+
+![OpenClaw dark home](docs/assets/showcase/openclaw-home-dark.png)
+
+### 浅色主题主界面
+
+![OpenClaw light home](docs/assets/showcase/openclaw-home-light.png)
+
+### 团队派工进行中
+
+![OpenClaw team spawn](docs/assets/showcase/openclaw-team-spawn.png)
+
+### 分析报告视图
+
+![OpenClaw analysis report](docs/assets/showcase/openclaw-analysis-report.png)
 
 ## 公开版目录
 

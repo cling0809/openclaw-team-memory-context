@@ -92,8 +92,7 @@
         "subagents": {
           "allowAgents": [
             "*"
-          ],
-          "requireAgentId": true
+          ]
         }
       },
       {
