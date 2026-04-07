@@ -570,6 +570,10 @@ body.lpt-workbench > #buli-team-panel {
 	margin-right: 0 !important;
 }
 
+body.lpt-workbench > #buli-team-panel > * {
+	pointer-events: auto !important;
+}
+
 openclaw-app {
 	min-height: 100vh;
 }

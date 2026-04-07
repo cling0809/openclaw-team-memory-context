@@ -30,6 +30,10 @@
       "mode": "off",
       "resetOnExit": false
     },
+    "controlUi": {
+      "enabled": true,
+      "allowInsecureAuth": true
+    },
     "auth": {
       "mode": "token",
       "token": "__GATEWAY_TOKEN__"
@@ -53,9 +57,9 @@
         "mode": "api_key",
         "provider": "google"
       },
-      "minimax-cn:default": {
+      "minimax:cn": {
         "mode": "api_key",
-        "provider": "minimax-cn"
+        "provider": "minimax"
       },
       "minimax-portal:default": {
         "mode": "oauth",
@@ -127,7 +131,7 @@
         }
       },
       "model": {
-        "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
         "fallbacks": []
       },
       "models": {
@@ -159,13 +163,13 @@
         "google/gemini-3-pro-preview": {
           "alias": "gemini"
         },
-        "minimax-cn/MiniMax-M2.1": {
+        "minimax/MiniMax-M2.1": {
           "alias": "minimax-m2.1"
         },
-        "minimax-cn/MiniMax-M2.5": {
+        "minimax/MiniMax-M2.5": {
           "alias": "minimax-m2.5"
         },
-        "minimax-cn/MiniMax-M2.7": {
+        "minimax/MiniMax-M2.7": {
           "alias": "minimax-m2.7"
         },
         "openai-codex/gpt-5.3-codex": {
@@ -178,7 +182,7 @@
         "maxConcurrent": 6,
         "maxSpawnDepth": 3,
         "runTimeoutSeconds": 900,
-        "model": "minimax-cn/MiniMax-M2.7"
+        "model": "minimax/MiniMax-M2.7"
       }
     },
     "list": [
@@ -192,7 +196,7 @@
           "theme": "总控调度·不良帅"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -213,7 +217,7 @@
           "theme": "稳健的工程实现者"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -234,7 +238,7 @@
           "theme": "快速补位、读改并行的代码助手"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -255,7 +259,7 @@
           "theme": "中文优先的资料分析师"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -276,7 +280,7 @@
           "theme": "懂设计也能落代码的界面打磨者"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -297,7 +301,7 @@
           "theme": "喜欢复现问题和守住回归线的验证者"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -318,7 +322,7 @@
           "theme": "专挑风险和漏洞的把关者"
         },
         "model": {
-          "primary": "minimax-cn/MiniMax-M2.7",
+          "primary": "minimax/MiniMax-M2.7",
           "fallbacks": []
         },
         "thinkingDefault": "high",
@@ -381,8 +385,9 @@
         "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
         "models": []
       },
-      "minimax-cn": {
+      "minimax": {
         "api": "anthropic-messages",
+        "apiKey": "${MINIMAX_API_KEY}",
         "authHeader": true,
         "baseUrl": "https://api.minimaxi.com/anthropic",
         "models": [

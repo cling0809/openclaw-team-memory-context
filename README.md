@@ -49,17 +49,19 @@ pnpm public:setup
 pnpm public:onboard
 pnpm public:gateway
 # 新开一个终端查看 dashboard 地址
-pnpm public:dashboard -- --no-open
+pnpm public:dashboard
 ```
 
 说明：
 
 - `public:setup` 会在仓库根目录下创建 `.openclaw-public/` 本地状态目录，并生成脱敏后的 `openclaw.json`。
 - `public:setup` 还会生成每个 agent 的角色工作区骨架，保留不良人人设、协作规则和共享 workspace 快照。
+- `public:setup` 现在还会预建 `.openclaw-public/agents/<id>/{agent,sessions}`，并在检测到 `MINIMAX_API_KEY` 时自动把主 agent 的 MiniMax 认证写入并镜像到所有角色 agent，避免派工时各自找不到 auth store。
 - `public:onboard` 会自动带上本地状态目录、模板配置和本仓库的 `workspace/` 路径。
 - `public:gateway` 会用同一套本地配置启动 Gateway。
-- `public:dashboard` 会打印当前公开版实例的 dashboard URL。
+- `public:dashboard` 会打印当前公开版实例的 dashboard URL，并自动在浏览器打开。
 - `public:token` 会打印当前公开版实例使用的 gateway token，便于首次连接 Control UI。
+- `public:devices:list` 和 `public:devices:approve` 用来处理复用旧浏览器状态时残留的配对请求。
 - `public:refresh` 会用最新公开模板重写本地 `.openclaw-public/openclaw.json` 和角色工作区骨架，适合拉到新版本后刷新体验。
 
 是否可以直接用：
@@ -67,9 +69,20 @@ pnpm public:dashboard -- --no-open
 - 可以，但前提是先安装依赖。
 - 仓库已经包含可直接运行的 OpenClaw CLI 入口和预编译 `dist/`，不需要你先自己构建 TypeScript 输出。
 - clone 下来后，按上面的步骤执行 `pnpm install`、`pnpm public:setup`，再进入 `pnpm public:onboard` 或 `pnpm public:gateway` 即可开始使用。
+- 如果你已经有 MiniMax key，最快路径是先在当前 shell 里设置 `MINIMAX_API_KEY`，再执行 `pnpm public:setup` 或 `pnpm public:refresh`；公开版脚本会把它写进 main agent 的 auth store，并同步到所有角色 agent。
 - 公开版初始化会自动补齐 `gateway.mode=local` 和本地 token 认证，避免不同机器上出现未配置网关或首次连接无法鉴权的问题。
+- 公开模板默认启用了 `gateway.controlUi.allowInsecureAuth=true`，尽量避免首次通过本地 HTTP 打开 Control UI 时被设备配对拦住写操作或子 agent 派工。
+- 公开模板已经对齐到当前 OpenClaw 的 MiniMax provider ID（`minimax`），不会再出现新版本 onboard 已经写入 MiniMax 凭据，但公开模板仍然去找过期 `minimax-cn` provider 的错位。
 - 公开版还会同步安全可公开的模型别名、技能启用、工具配置、浏览器能力和不良人多工作区骨架，让整体体验更接近作者本地日常使用的版本。
 - 本仓库默认把本地运行态写入 `.openclaw-public/`，不会污染版本库。
+
+如果你只想把 MiniMax 认证先配好，再启动公开版，推荐这样做：
+
+```bash
+export MINIMAX_API_KEY=你的_key
+pnpm public:setup
+pnpm public:gateway
+```
 
 如果你是旧版本用户，想把本地体验升级到当前这版，而不是只补缺失字段，执行：
 
@@ -115,14 +128,34 @@ pnpm public:refresh
 
 ```bash
 pnpm public:gateway
-pnpm public:dashboard -- --no-open
+pnpm public:dashboard
 pnpm public:token
+pnpm public:devices:list
+pnpm public:devices:approve
 ```
 
 - 打开 `public:dashboard` 打印出来的 URL。
 - 如果 Control UI 要求认证，把 `public:token` 打印出的 token 粘贴到设置里。
+- 如果 Control UI 还能连上但执行派工、发送或写操作时报 `pairing required`，先运行 `pnpm public:devices:list` 看是否有待审批请求，再执行 `pnpm public:devices:approve`。
+- 如果连 `public:devices:list` 都报 `gateway token mismatch`，说明你本机还有旧 gateway 在跑，先执行 `pnpm public:gateway:stop`，再重新执行 `pnpm public:gateway`。
 - 如果仍然出现 `device token mismatch`，清掉 `127.0.0.1:18789` 或 `localhost:18789` 的站点数据后重开，或者直接用无痕窗口再试一次。
 - 如果是旧版本仓库首次生成的 `.openclaw-public/openclaw.json`，现在的包装脚本会在下一次运行时自动补齐缺失的 `gateway.mode` 和 `gateway.auth.token`，不需要手工重建整个仓库。
+
+### `No API key found for provider "minimax"`
+
+这通常不是 OpenClaw 本体坏了，而是当前公开版实例还没有拿到你自己的 MiniMax 凭据，或者你本地还保留着旧版 `minimax-cn` 模板生成的配置。
+
+推荐按这个顺序处理：
+
+```bash
+export MINIMAX_API_KEY=你的_key
+pnpm public:refresh
+pnpm public:gateway
+```
+
+- `public:refresh` 现在会把旧版公开模板里的 `minimax-cn` 引用迁移到当前版本真实使用的 `minimax` provider。
+- 如果 main agent 已经有 auth store，包装脚本会在下一次运行时自动把同一份 auth-profiles 同步到 coder、research、qa 等角色 agent，避免子 agent 派工时报各自缺 key。
+- 如果你更想走交互式配置，也可以重新运行 `pnpm public:onboard`；当前 OpenClaw 版本会使用新的 MiniMax provider 选项写入正确的 auth store。
 
 ## Showcase
 

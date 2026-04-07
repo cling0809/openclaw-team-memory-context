@@ -540,6 +540,12 @@ function ensureStyles() {
     document.head.appendChild(style);
   }
   style.textContent = `
+    body.lpt-workbench > #${PANEL_ID} {
+      pointer-events: none !important;
+    }
+    body.lpt-workbench > #${PANEL_ID} > * {
+      pointer-events: auto !important;
+    }
     /* ── 强制布局兜底：即使外部 CSS 失效，也保持左 tab 右内容 ── */
     #${PANEL_ID}.buli-integrated-host {
       display: flex !important;
@@ -840,6 +846,8 @@ function buildPanel() {
   handle.title = "打开/收起不良人总谱";
   const body = createEl("section", "buli-body");
   const scroll = createEl("div", "buli-scroll");
+  handle.style.pointerEvents = "auto";
+  body.style.pointerEvents = "auto";
 
   body.innerHTML = `
     <div class="buli-head">

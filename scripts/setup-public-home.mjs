@@ -282,8 +282,259 @@ function createGatewayToken() {
   return randomBytes(24).toString("hex");
 }
 
+function readConfiguredGatewayToken(config) {
+  const token = config?.gateway?.auth?.token;
+  return typeof token === "string" && token.trim().length > 0 ? token.trim() : null;
+}
+
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function isPlainObject(value) {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function migrateLegacyMiniMaxModelId(value) {
+  if (typeof value !== "string") return value;
+  return value.startsWith("minimax-cn/") ? `minimax/${value.slice("minimax-cn/".length)}` : value;
+}
+
+function migrateLegacyMiniMaxProfileId(value) {
+  if (typeof value !== "string") return value;
+  if (value === "minimax-cn:default") {
+    return "minimax:cn";
+  }
+  return value.startsWith("minimax-cn:") ? `minimax:${value.slice("minimax-cn:".length)}` : value;
+}
+
+function migrateLegacyMiniMaxProviderId(value) {
+  return value === "minimax-cn" ? "minimax" : value;
+}
+
+function remapMiniMaxModelRegistry(modelRegistry) {
+  if (!isPlainObject(modelRegistry)) {
+    return modelRegistry;
+  }
+  const next = {};
+  for (const [key, value] of Object.entries(modelRegistry)) {
+    next[migrateLegacyMiniMaxModelId(key)] = cloneJson(value);
+  }
+  return next;
+}
+
+function remapMiniMaxModelSelection(modelSelection) {
+  if (!isPlainObject(modelSelection)) {
+    return modelSelection;
+  }
+  const next = cloneJson(modelSelection);
+  if (typeof next.primary === "string") {
+    next.primary = migrateLegacyMiniMaxModelId(next.primary);
+  }
+  if (Array.isArray(next.fallbacks)) {
+    next.fallbacks = next.fallbacks.map((entry) => migrateLegacyMiniMaxModelId(entry));
+  }
+  return next;
+}
+
+function remapMiniMaxAuthOrder(order) {
+  if (!isPlainObject(order)) {
+    return order;
+  }
+  const next = {};
+  for (const [provider, profiles] of Object.entries(order)) {
+    const nextProvider = migrateLegacyMiniMaxProviderId(provider);
+    const nextProfiles = Array.isArray(profiles)
+      ? profiles.map((profileId) => migrateLegacyMiniMaxProfileId(profileId))
+      : cloneJson(profiles);
+    if (!(nextProvider in next)) {
+      next[nextProvider] = nextProfiles;
+      continue;
+    }
+    if (Array.isArray(next[nextProvider]) && Array.isArray(nextProfiles)) {
+      const merged = [...next[nextProvider], ...nextProfiles];
+      next[nextProvider] = [...new Set(merged)];
+      continue;
+    }
+    next[nextProvider] = mergeMissingDefaults(next[nextProvider], nextProfiles);
+  }
+  return next;
+}
+
+function remapMiniMaxAuthProfiles(profiles) {
+  if (!isPlainObject(profiles)) {
+    return profiles;
+  }
+  const next = {};
+  for (const [profileId, profile] of Object.entries(profiles)) {
+    const nextProfileId = migrateLegacyMiniMaxProfileId(profileId);
+    const nextProfile = isPlainObject(profile) ? cloneJson(profile) : cloneJson(profile);
+    if (isPlainObject(nextProfile) && typeof nextProfile.provider === "string") {
+      nextProfile.provider = migrateLegacyMiniMaxProviderId(nextProfile.provider);
+    }
+    if (!(nextProfileId in next)) {
+      next[nextProfileId] = nextProfile;
+      continue;
+    }
+    next[nextProfileId] = mergeMissingDefaults(next[nextProfileId], nextProfile);
+  }
+  return next;
+}
+
+function remapMiniMaxProviders(providers) {
+  if (!isPlainObject(providers)) {
+    return providers;
+  }
+  const next = {};
+  let legacyMiniMaxProvider = null;
+  for (const [providerId, provider] of Object.entries(providers)) {
+    if (providerId === "minimax-cn") {
+      legacyMiniMaxProvider = cloneJson(provider);
+      continue;
+    }
+    next[providerId] = cloneJson(provider);
+  }
+
+  if (legacyMiniMaxProvider != null) {
+    next.minimax = "minimax" in next ? mergeMissingDefaults(next.minimax, legacyMiniMaxProvider) : legacyMiniMaxProvider;
+  }
+
+  if (isPlainObject(next.minimax) && next.minimax.apiKey == null) {
+    next.minimax.apiKey = "${MINIMAX_API_KEY}";
+  }
+
+  return next;
+}
+
+function migrateLegacyPublicMiniMaxConfig(config) {
+  const next = cloneJson(config);
+
+  if (isPlainObject(next.auth)) {
+    if (isPlainObject(next.auth.order)) {
+      next.auth.order = remapMiniMaxAuthOrder(next.auth.order);
+    }
+    if (isPlainObject(next.auth.profiles)) {
+      next.auth.profiles = remapMiniMaxAuthProfiles(next.auth.profiles);
+    }
+  }
+
+  if (isPlainObject(next.models) && isPlainObject(next.models.providers)) {
+    next.models.providers = remapMiniMaxProviders(next.models.providers);
+  }
+
+  if (isPlainObject(next.agents)) {
+    if (isPlainObject(next.agents.defaults)) {
+      if (isPlainObject(next.agents.defaults.model)) {
+        next.agents.defaults.model = remapMiniMaxModelSelection(next.agents.defaults.model);
+      }
+      if (isPlainObject(next.agents.defaults.models)) {
+        next.agents.defaults.models = remapMiniMaxModelRegistry(next.agents.defaults.models);
+      }
+      if (isPlainObject(next.agents.defaults.subagents) && typeof next.agents.defaults.subagents.model === "string") {
+        next.agents.defaults.subagents.model = migrateLegacyMiniMaxModelId(next.agents.defaults.subagents.model);
+      }
+    }
+    if (Array.isArray(next.agents.list)) {
+      next.agents.list = next.agents.list.map((entry) => {
+        if (!isPlainObject(entry) || !isPlainObject(entry.model)) {
+          return entry;
+        }
+        return {
+          ...entry,
+          model: remapMiniMaxModelSelection(entry.model),
+        };
+      });
+    }
+  }
+
+  return next;
+}
+
+function collectConfiguredAgentIds(config) {
+  const ids = new Set(["main"]);
+  if (Array.isArray(config?.agents?.list)) {
+    for (const entry of config.agents.list) {
+      const agentId = typeof entry?.id === "string" ? entry.id.trim() : "";
+      if (agentId) {
+        ids.add(agentId);
+      }
+    }
+  }
+  return [...ids];
+}
+
+async function writeJsonFileIfChanged(targetPath, value) {
+  const nextRaw = `${JSON.stringify(value, null, 2)}\n`;
+  const currentRaw = (await pathExists(targetPath)) ? await fs.readFile(targetPath, "utf8") : null;
+  if (currentRaw === nextRaw) {
+    return false;
+  }
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.writeFile(targetPath, nextRaw, "utf8");
+  return true;
+}
+
+async function ensureAgentStateDirs(stateDir, config) {
+  const agentIds = collectConfiguredAgentIds(config);
+  for (const agentId of agentIds) {
+    await fs.mkdir(path.join(stateDir, "agents", agentId, "agent"), { recursive: true });
+    await fs.mkdir(path.join(stateDir, "agents", agentId, "sessions"), { recursive: true });
+  }
+  return agentIds;
+}
+
+function resolvePublicMiniMaxApiKey() {
+  const candidates = [process.env.MINIMAX_API_KEY, process.env.MINIMAX_CODE_PLAN_KEY];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+  return null;
+}
+
+function buildPublicMiniMaxAuthStore(apiKey) {
+  return {
+    version: 1,
+    profiles: {
+      "minimax:cn": {
+        type: "api_key",
+        provider: "minimax",
+        key: apiKey,
+      },
+    },
+  };
+}
+
+async function ensureSeededMainAuthStore(stateDir) {
+  const mainAuthPath = path.join(stateDir, "agents", "main", "agent", "auth-profiles.json");
+  if (await pathExists(mainAuthPath)) {
+    return false;
+  }
+  const apiKey = resolvePublicMiniMaxApiKey();
+  if (!apiKey) {
+    return false;
+  }
+  return await writeJsonFileIfChanged(mainAuthPath, buildPublicMiniMaxAuthStore(apiKey));
+}
+
+async function mirrorMainAuthStore(stateDir, agentIds) {
+  const mainAuthPath = path.join(stateDir, "agents", "main", "agent", "auth-profiles.json");
+  if (!(await pathExists(mainAuthPath))) {
+    return 0;
+  }
+  const mainStore = JSON.parse(await fs.readFile(mainAuthPath, "utf8"));
+  let mirrored = 0;
+  for (const agentId of agentIds) {
+    if (agentId === "main") {
+      continue;
+    }
+    const authPath = path.join(stateDir, "agents", agentId, "agent", "auth-profiles.json");
+    if (await writeJsonFileIfChanged(authPath, mainStore)) {
+      mirrored += 1;
+    }
+  }
+  return mirrored;
 }
 
 function buildRoleAgentGuide(role, spec) {
@@ -472,7 +723,9 @@ function ensurePublicGatewayDefaults(config, fallbackToken) {
 }
 
 function ensurePublicConfigDefaults(config, defaults, fallbackToken) {
-  return ensurePublicGatewayDefaults(mergeMissingDefaults(config, defaults), fallbackToken);
+  return migrateLegacyPublicMiniMaxConfig(
+    ensurePublicGatewayDefaults(mergeMissingDefaults(config, defaults), fallbackToken),
+  );
 }
 
 export async function preparePublicOpenClawHome(options = {}) {
@@ -481,6 +734,8 @@ export async function preparePublicOpenClawHome(options = {}) {
   const workspaceDir = path.resolve(options.workspaceDir || path.join(repoRoot, "workspace"));
   const configPath = path.resolve(options.configPath || path.join(stateDir, "openclaw.json"));
   const templatePath = path.join(repoRoot, "templates", "openclaw.public.template.json");
+  const configExists = await pathExists(configPath);
+  const existingConfig = configExists ? JSON.parse(await fs.readFile(configPath, "utf8")) : null;
 
   await fs.mkdir(stateDir, { recursive: true });
   await fs.mkdir(path.join(stateDir, "state"), { recursive: true });
@@ -490,8 +745,8 @@ export async function preparePublicOpenClawHome(options = {}) {
 
   const templateRaw = await fs.readFile(templatePath, "utf8");
   const template = JSON.parse(templateRaw);
-  const generatedGatewayToken = createGatewayToken();
-  const rendered = ensurePublicGatewayDefaults(
+  const generatedGatewayToken = readConfiguredGatewayToken(existingConfig) || createGatewayToken();
+  const rendered = migrateLegacyPublicMiniMaxConfig(ensurePublicGatewayDefaults(
     replacePlaceholders(template, {
     "__REPO_ROOT__": repoRoot,
     "__WORKSPACE_DIR__": workspaceDir,
@@ -507,22 +762,28 @@ export async function preparePublicOpenClawHome(options = {}) {
       "__GATEWAY_TOKEN__": generatedGatewayToken,
     }),
     generatedGatewayToken,
-  );
+  ));
 
-  const configExists = await pathExists(configPath);
   let updatedConfig = false;
+  let finalConfig = rendered;
   if (!configExists || options.force) {
     await fs.writeFile(configPath, `${JSON.stringify(rendered, null, 2)}\n`, "utf8");
   } else {
     const existingRaw = await fs.readFile(configPath, "utf8");
-    const existing = JSON.parse(existingRaw);
+    const existing = existingConfig || JSON.parse(existingRaw);
     const ensured = ensurePublicConfigDefaults(existing, rendered, generatedGatewayToken);
+    finalConfig = ensured;
     const nextRaw = `${JSON.stringify(ensured, null, 2)}\n`;
     if (nextRaw !== existingRaw) {
       await fs.writeFile(configPath, nextRaw, "utf8");
       updatedConfig = true;
     }
   }
+
+  const agentIds = await ensureAgentStateDirs(stateDir, finalConfig);
+  const seededMainAuth = await ensureSeededMainAuthStore(stateDir);
+  const mirroredAuthCount = await mirrorMainAuthStore(stateDir, agentIds);
+  const hasMainAuthStore = await pathExists(path.join(stateDir, "agents", "main", "agent", "auth-profiles.json"));
 
   return {
     repoRoot,
@@ -533,6 +794,9 @@ export async function preparePublicOpenClawHome(options = {}) {
     configPath,
     createdConfig: !configExists || options.force,
     updatedConfig,
+    seededMainAuth,
+    mirroredAuthCount,
+    hasMainAuthStore,
   };
 }
 
@@ -550,11 +814,19 @@ async function main() {
       `agentWorkspaceRootDir: ${result.agentWorkspaceRootDir}`,
       `configPath: ${result.configPath}`,
       result.createdConfig ? "config: written" : result.updatedConfig ? "config: updated missing public defaults" : "config: kept existing",
+      result.seededMainAuth
+        ? `auth: seeded main MiniMax profile from env and mirrored to ${result.mirroredAuthCount} role agents`
+        : result.hasMainAuthStore
+          ? result.mirroredAuthCount > 0
+            ? `auth: mirrored main agent auth to ${result.mirroredAuthCount} role agents`
+            : "auth: ready"
+          : "auth: pending (run pnpm public:onboard or export MINIMAX_API_KEY before pnpm public:gateway)",
       "",
       "Next steps:",
       "  pnpm public:onboard",
       "  pnpm public:gateway",
-      "  pnpm public:dashboard -- --no-open",
+      "  pnpm public:dashboard",
+      "  pnpm public:devices:approve   # if a reused browser still shows pairing required",
       "  pnpm public:refresh   # rewrite local public config from latest template",
     ].join("\n"),
   );
