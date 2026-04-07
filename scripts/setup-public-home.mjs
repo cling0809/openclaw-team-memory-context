@@ -854,7 +854,7 @@ function ensurePublicGatewayDefaults(config, fallbackToken) {
     gateway.bind = "loopback";
   }
   if (gateway.port == null) {
-    gateway.port = 18789;
+    gateway.port = 18889;
   }
 
   const auth = gateway.auth && typeof gateway.auth === "object" && !Array.isArray(gateway.auth) ? gateway.auth : {};
