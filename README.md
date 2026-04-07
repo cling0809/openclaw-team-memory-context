@@ -46,6 +46,8 @@ pnpm install
 pnpm public:setup
 pnpm public:onboard
 pnpm public:gateway
+# 新开一个终端查看 dashboard 地址
+pnpm public:dashboard -- --no-open
 ```
 
 说明：
@@ -53,12 +55,15 @@ pnpm public:gateway
 - `public:setup` 会在仓库根目录下创建 `.openclaw-public/` 本地状态目录，并生成脱敏后的 `openclaw.json`。
 - `public:onboard` 会自动带上本地状态目录、模板配置和本仓库的 `workspace/` 路径。
 - `public:gateway` 会用同一套本地配置启动 Gateway。
+- `public:dashboard` 会打印当前公开版实例的 dashboard URL。
+- `public:token` 会打印当前公开版实例使用的 gateway token，便于首次连接 Control UI。
 
 是否可以直接用：
 
 - 可以，但前提是先安装依赖。
 - 仓库已经包含可直接运行的 OpenClaw CLI 入口和预编译 `dist/`，不需要你先自己构建 TypeScript 输出。
 - clone 下来后，按上面的步骤执行 `pnpm install`、`pnpm public:setup`，再进入 `pnpm public:onboard` 或 `pnpm public:gateway` 即可开始使用。
+- 公开版初始化会自动补齐 `gateway.mode=local` 和本地 token 认证，避免不同机器上出现未配置网关或首次连接无法鉴权的问题。
 - 本仓库默认把本地运行态写入 `.openclaw-public/`，不会污染版本库。
 
 如果你只想直接体验 agent：
@@ -66,6 +71,25 @@ pnpm public:gateway
 ```bash
 pnpm public:agent -- --message "hello"
 ```
+
+## 常见问题
+
+### `gateway token mismatch` / `device token mismatch`
+
+这类报错通常不是 Gateway 没起来，而是浏览器里的 Control UI 还保留着旧 token 或旧设备令牌。
+
+推荐按这个顺序处理：
+
+```bash
+pnpm public:gateway
+pnpm public:dashboard -- --no-open
+pnpm public:token
+```
+
+- 打开 `public:dashboard` 打印出来的 URL。
+- 如果 Control UI 要求认证，把 `public:token` 打印出的 token 粘贴到设置里。
+- 如果仍然出现 `device token mismatch`，清掉 `127.0.0.1:18789` 或 `localhost:18789` 的站点数据后重开，或者直接用无痕窗口再试一次。
+- 如果是旧版本仓库首次生成的 `.openclaw-public/openclaw.json`，现在的包装脚本会在下一次运行时自动补齐缺失的 `gateway.mode` 和 `gateway.auth.token`，不需要手工重建整个仓库。
 
 ## Showcase
 

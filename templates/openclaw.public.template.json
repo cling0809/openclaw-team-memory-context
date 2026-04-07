@@ -1,7 +1,12 @@
 {
   "gateway": {
+    "mode": "local",
     "bind": "loopback",
-    "port": 18789
+    "port": 18789,
+    "auth": {
+      "mode": "token",
+      "token": "__GATEWAY_TOKEN__"
+    }
   },
   "agents": {
     "defaults": {

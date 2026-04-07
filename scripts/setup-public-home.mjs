@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,6 +65,52 @@ async function pathExists(targetPath) {
   }
 }
 
+function createGatewayToken() {
+  return randomBytes(24).toString("hex");
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function ensurePublicGatewayDefaults(config, fallbackToken) {
+  const next = cloneJson(config);
+  const gateway = next.gateway && typeof next.gateway === "object" && !Array.isArray(next.gateway) ? next.gateway : {};
+  next.gateway = gateway;
+
+  if (gateway.mode == null) {
+    gateway.mode = "local";
+  }
+  if (gateway.bind == null) {
+    gateway.bind = "loopback";
+  }
+  if (gateway.port == null) {
+    gateway.port = 18789;
+  }
+
+  const auth = gateway.auth && typeof gateway.auth === "object" && !Array.isArray(gateway.auth) ? gateway.auth : {};
+  gateway.auth = auth;
+
+  const hasToken = typeof auth.token === "string" && auth.token.trim().length > 0;
+  const hasPassword = typeof auth.password === "string" && auth.password.trim().length > 0;
+
+  if (auth.mode == null) {
+    if (hasToken && !hasPassword) {
+      auth.mode = "token";
+    } else if (hasPassword && !hasToken) {
+      auth.mode = "password";
+    } else if (!hasToken && !hasPassword) {
+      auth.mode = "token";
+    }
+  }
+
+  if (auth.mode === "token" && !hasToken) {
+    auth.token = fallbackToken;
+  }
+
+  return next;
+}
+
 export async function preparePublicOpenClawHome(options = {}) {
   const repoRoot = resolveRepoRoot();
   const stateDir = path.resolve(options.stateDir || path.join(repoRoot, ".openclaw-public"));
@@ -78,15 +125,30 @@ export async function preparePublicOpenClawHome(options = {}) {
 
   const templateRaw = await fs.readFile(templatePath, "utf8");
   const template = JSON.parse(templateRaw);
-  const rendered = replacePlaceholders(template, {
+  const generatedGatewayToken = createGatewayToken();
+  const rendered = ensurePublicGatewayDefaults(
+    replacePlaceholders(template, {
     "__REPO_ROOT__": repoRoot,
     "__WORKSPACE_DIR__": workspaceDir,
     "__STATE_DIR__": stateDir,
-  });
+      "__GATEWAY_TOKEN__": generatedGatewayToken,
+    }),
+    generatedGatewayToken,
+  );
 
   const configExists = await pathExists(configPath);
+  let updatedConfig = false;
   if (!configExists || options.force) {
     await fs.writeFile(configPath, `${JSON.stringify(rendered, null, 2)}\n`, "utf8");
+  } else {
+    const existingRaw = await fs.readFile(configPath, "utf8");
+    const existing = JSON.parse(existingRaw);
+    const ensured = ensurePublicGatewayDefaults(existing, generatedGatewayToken);
+    const nextRaw = `${JSON.stringify(ensured, null, 2)}\n`;
+    if (nextRaw !== existingRaw) {
+      await fs.writeFile(configPath, nextRaw, "utf8");
+      updatedConfig = true;
+    }
   }
 
   return {
@@ -95,6 +157,7 @@ export async function preparePublicOpenClawHome(options = {}) {
     workspaceDir,
     configPath,
     createdConfig: !configExists || options.force,
+    updatedConfig,
   };
 }
 
@@ -110,11 +173,12 @@ async function main() {
       `stateDir: ${result.stateDir}`,
       `workspaceDir: ${result.workspaceDir}`,
       `configPath: ${result.configPath}`,
-      result.createdConfig ? "config: written" : "config: kept existing",
+      result.createdConfig ? "config: written" : result.updatedConfig ? "config: updated missing public defaults" : "config: kept existing",
       "",
       "Next steps:",
       "  pnpm public:onboard",
       "  pnpm public:gateway",
+      "  pnpm public:dashboard -- --no-open",
     ].join("\n"),
   );
 }

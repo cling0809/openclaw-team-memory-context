@@ -999,6 +999,8 @@
   "scripts": {
     "public:setup": "node scripts/setup-public-home.mjs",
     "public:gateway": "node scripts/run-public.mjs gateway",
+    "public:dashboard": "node scripts/run-public.mjs dashboard",
+    "public:token": "node scripts/run-public.mjs config get gateway.auth.token",
     "public:onboard": "node scripts/run-public.mjs onboard",
     "public:agent": "node scripts/run-public.mjs agent",
     "public:doctor": "node scripts/run-public.mjs doctor",
