@@ -76,6 +76,8 @@ const COMMON_MEMORY = `# MEMORY.md
 - 不记录对话原文、日志或凭据
 `;
 
+const AGENT_WORKSPACE_SYNC_FILES = ["skillImprovement.js"];
+
 const ROLE_WORKSPACE_SPECS = {
   main: {
     emoji: "⚔️",
@@ -381,6 +383,34 @@ function remapMiniMaxAuthProfiles(profiles) {
   return next;
 }
 
+function remapMiniMaxLastGood(lastGood) {
+  if (!isPlainObject(lastGood)) {
+    return lastGood;
+  }
+  const next = {};
+  for (const [providerId, profileId] of Object.entries(lastGood)) {
+    next[migrateLegacyMiniMaxProviderId(providerId)] = migrateLegacyMiniMaxProfileId(profileId);
+  }
+  return next;
+}
+
+function remapMiniMaxUsageStats(usageStats) {
+  if (!isPlainObject(usageStats)) {
+    return usageStats;
+  }
+  const next = {};
+  for (const [profileId, stats] of Object.entries(usageStats)) {
+    const nextProfileId = migrateLegacyMiniMaxProfileId(profileId);
+    const nextStats = stats == null ? stats : cloneJson(stats);
+    if (!(nextProfileId in next)) {
+      next[nextProfileId] = nextStats;
+      continue;
+    }
+    next[nextProfileId] = mergeMissingDefaults(next[nextProfileId], nextStats);
+  }
+  return next;
+}
+
 function remapMiniMaxProviders(providers) {
   if (!isPlainObject(providers)) {
     return providers;
@@ -399,8 +429,11 @@ function remapMiniMaxProviders(providers) {
     next.minimax = "minimax" in next ? mergeMissingDefaults(next.minimax, legacyMiniMaxProvider) : legacyMiniMaxProvider;
   }
 
-  if (isPlainObject(next.minimax) && next.minimax.apiKey == null) {
-    next.minimax.apiKey = "${MINIMAX_API_KEY}";
+  if (isPlainObject(next.minimax)) {
+    const apiKey = typeof next.minimax.apiKey === "string" ? next.minimax.apiKey.trim() : next.minimax.apiKey;
+    if (apiKey === "" || apiKey === "${MINIMAX_API_KEY}" || apiKey === "${MINIMAX_CODE_PLAN_KEY}") {
+      delete next.minimax.apiKey;
+    }
   }
 
   return next;
@@ -450,6 +483,26 @@ function migrateLegacyPublicMiniMaxConfig(config) {
   return next;
 }
 
+function migrateLegacyMiniMaxAuthStore(store) {
+  if (!isPlainObject(store)) {
+    return store;
+  }
+
+  const next = cloneJson(store);
+
+  if (isPlainObject(next.profiles)) {
+    next.profiles = remapMiniMaxAuthProfiles(next.profiles);
+  }
+  if (isPlainObject(next.lastGood)) {
+    next.lastGood = remapMiniMaxLastGood(next.lastGood);
+  }
+  if (isPlainObject(next.usageStats)) {
+    next.usageStats = remapMiniMaxUsageStats(next.usageStats);
+  }
+
+  return next;
+}
+
 function collectConfiguredAgentIds(config) {
   const ids = new Set(["main"]);
   if (Array.isArray(config?.agents?.list)) {
@@ -472,6 +525,31 @@ async function writeJsonFileIfChanged(targetPath, value) {
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
   await fs.writeFile(targetPath, nextRaw, "utf8");
   return true;
+}
+
+async function normalizeAuthStoreFile(targetPath) {
+  if (!(await pathExists(targetPath))) {
+    return false;
+  }
+  const currentRaw = await fs.readFile(targetPath, "utf8");
+  const normalized = migrateLegacyMiniMaxAuthStore(JSON.parse(currentRaw));
+  const nextRaw = `${JSON.stringify(normalized, null, 2)}\n`;
+  if (nextRaw === currentRaw) {
+    return false;
+  }
+  await fs.writeFile(targetPath, nextRaw, "utf8");
+  return true;
+}
+
+async function normalizeAgentAuthStores(stateDir, agentIds) {
+  let normalized = 0;
+  for (const agentId of agentIds) {
+    const authPath = path.join(stateDir, "agents", agentId, "agent", "auth-profiles.json");
+    if (await normalizeAuthStoreFile(authPath)) {
+      normalized += 1;
+    }
+  }
+  return normalized;
 }
 
 async function ensureAgentStateDirs(stateDir, config) {
@@ -506,6 +584,44 @@ function buildPublicMiniMaxAuthStore(apiKey) {
   };
 }
 
+function resolveExistingOpenClawHomes(stateDir) {
+  const candidates = [process.env.OPENCLAW_HOME, path.join(process.env.HOME || "", ".openclaw")];
+  const seen = new Set();
+  const resolved = [];
+  const normalizedStateDir = path.resolve(stateDir);
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string" || candidate.trim().length === 0) {
+      continue;
+    }
+    const nextPath = path.resolve(candidate);
+    if (nextPath === normalizedStateDir || seen.has(nextPath)) {
+      continue;
+    }
+    seen.add(nextPath);
+    resolved.push(nextPath);
+  }
+  return resolved;
+}
+
+function resolveExistingAuthStoreCandidates(stateDir, agentId) {
+  const homes = resolveExistingOpenClawHomes(stateDir);
+  const exactPaths = homes.map((homeDir) => path.join(homeDir, "agents", agentId, "agent", "auth-profiles.json"));
+  if (agentId === "main") {
+    return exactPaths;
+  }
+  const fallbackMainPaths = homes.map((homeDir) => path.join(homeDir, "agents", "main", "agent", "auth-profiles.json"));
+  return [...exactPaths, ...fallbackMainPaths];
+}
+
+async function copyFileIfMissing(sourcePath, targetPath) {
+  if (await pathExists(targetPath)) {
+    return false;
+  }
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.copyFile(sourcePath, targetPath);
+  return true;
+}
+
 async function ensureSeededMainAuthStore(stateDir) {
   const mainAuthPath = path.join(stateDir, "agents", "main", "agent", "auth-profiles.json");
   if (await pathExists(mainAuthPath)) {
@@ -518,18 +634,47 @@ async function ensureSeededMainAuthStore(stateDir) {
   return await writeJsonFileIfChanged(mainAuthPath, buildPublicMiniMaxAuthStore(apiKey));
 }
 
+async function importExistingAuthStores(stateDir, agentIds) {
+  let imported = 0;
+  for (const agentId of agentIds) {
+    const targetPath = path.join(stateDir, "agents", agentId, "agent", "auth-profiles.json");
+    if (await pathExists(targetPath)) {
+      continue;
+    }
+    const candidates = resolveExistingAuthStoreCandidates(stateDir, agentId);
+    for (const candidatePath of candidates) {
+      if (!(await pathExists(candidatePath))) {
+        continue;
+      }
+      if (await copyFileIfMissing(candidatePath, targetPath)) {
+        imported += 1;
+      }
+      break;
+    }
+  }
+  return imported;
+}
+
 async function mirrorMainAuthStore(stateDir, agentIds) {
   const mainAuthPath = path.join(stateDir, "agents", "main", "agent", "auth-profiles.json");
   if (!(await pathExists(mainAuthPath))) {
     return 0;
   }
-  const mainStore = JSON.parse(await fs.readFile(mainAuthPath, "utf8"));
+  const mainStore = migrateLegacyMiniMaxAuthStore(JSON.parse(await fs.readFile(mainAuthPath, "utf8")));
   let mirrored = 0;
   for (const agentId of agentIds) {
     if (agentId === "main") {
       continue;
     }
     const authPath = path.join(stateDir, "agents", agentId, "agent", "auth-profiles.json");
+    if (await pathExists(authPath)) {
+      const existingStore = migrateLegacyMiniMaxAuthStore(JSON.parse(await fs.readFile(authPath, "utf8")));
+      const mergedStore = migrateLegacyMiniMaxAuthStore(mergeMissingDefaults(existingStore, mainStore));
+      if (await writeJsonFileIfChanged(authPath, mergedStore)) {
+        mirrored += 1;
+      }
+      continue;
+    }
     if (await writeJsonFileIfChanged(authPath, mainStore)) {
       mirrored += 1;
     }
@@ -610,6 +755,18 @@ async function writeTextFile(targetPath, content, force) {
   }
 }
 
+async function syncWorkspaceSupportFiles(sharedWorkspaceDir, roleWorkspaceDir) {
+  for (const relativePath of AGENT_WORKSPACE_SYNC_FILES) {
+    const sourcePath = path.join(sharedWorkspaceDir, relativePath);
+    if (!(await pathExists(sourcePath))) {
+      continue;
+    }
+    const targetPath = path.join(roleWorkspaceDir, relativePath);
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await fs.copyFile(sourcePath, targetPath);
+  }
+}
+
 async function ensureAgentWorkspaces(stateDir, sharedWorkspaceDir, force) {
   const rootDir = path.join(stateDir, "agent-workspaces");
   await fs.mkdir(rootDir, { recursive: true });
@@ -632,6 +789,7 @@ async function ensureAgentWorkspaces(stateDir, sharedWorkspaceDir, force) {
     if (!(await pathExists(roleWorkspaceDir))) {
       await fs.cp(sharedWorkspaceDir, roleWorkspaceDir, { recursive: true });
     }
+    await syncWorkspaceSupportFiles(sharedWorkspaceDir, roleWorkspaceDir);
   }
 
   return { rootDir, roleDirs };
@@ -782,6 +940,8 @@ export async function preparePublicOpenClawHome(options = {}) {
 
   const agentIds = await ensureAgentStateDirs(stateDir, finalConfig);
   const seededMainAuth = await ensureSeededMainAuthStore(stateDir);
+  const importedAuthCount = await importExistingAuthStores(stateDir, agentIds);
+  const normalizedAuthCount = await normalizeAgentAuthStores(stateDir, agentIds);
   const mirroredAuthCount = await mirrorMainAuthStore(stateDir, agentIds);
   const hasMainAuthStore = await pathExists(path.join(stateDir, "agents", "main", "agent", "auth-profiles.json"));
 
@@ -795,6 +955,8 @@ export async function preparePublicOpenClawHome(options = {}) {
     createdConfig: !configExists || options.force,
     updatedConfig,
     seededMainAuth,
+    importedAuthCount,
+    normalizedAuthCount,
     mirroredAuthCount,
     hasMainAuthStore,
   };
@@ -815,17 +977,20 @@ async function main() {
       `configPath: ${result.configPath}`,
       result.createdConfig ? "config: written" : result.updatedConfig ? "config: updated missing public defaults" : "config: kept existing",
       result.seededMainAuth
-        ? `auth: seeded main MiniMax profile from env and mirrored to ${result.mirroredAuthCount} role agents`
+        ? `auth: seeded main MiniMax profile from env${result.importedAuthCount > 0 ? `; imported ${result.importedAuthCount} auth store(s) from existing ~/.openclaw` : ""}${result.normalizedAuthCount > 0 ? `; migrated ${result.normalizedAuthCount} legacy MiniMax auth store(s)` : ""}${result.mirroredAuthCount > 0 ? `; mirrored to ${result.mirroredAuthCount} role agent(s)` : ""}`
         : result.hasMainAuthStore
-          ? result.mirroredAuthCount > 0
-            ? `auth: mirrored main agent auth to ${result.mirroredAuthCount} role agents`
-            : "auth: ready"
-          : "auth: pending (run pnpm public:onboard or export MINIMAX_API_KEY before pnpm public:gateway)",
+          ? [
+              result.importedAuthCount > 0 ? `imported ${result.importedAuthCount} auth store(s) from existing ~/.openclaw` : null,
+              result.normalizedAuthCount > 0 ? `migrated ${result.normalizedAuthCount} legacy MiniMax auth store(s)` : null,
+              result.mirroredAuthCount > 0 ? `mirrored main auth to ${result.mirroredAuthCount} role agent(s)` : null,
+              result.importedAuthCount === 0 && result.normalizedAuthCount === 0 && result.mirroredAuthCount === 0 ? "auth: ready" : null,
+            ].filter(Boolean).join("; ")
+          : "auth: pending (gateway can start; run pnpm public:onboard or export MINIMAX_API_KEY before first MiniMax task)",
       "",
       "Next steps:",
       "  pnpm public:onboard",
       "  pnpm public:gateway",
-      "  pnpm public:dashboard",
+      "  pnpm public:dashboard   # or pnpm oc-web",
       "  pnpm public:devices:approve   # if a reused browser still shows pairing required",
       "  pnpm public:refresh   # rewrite local public config from latest template",
     ].join("\n"),

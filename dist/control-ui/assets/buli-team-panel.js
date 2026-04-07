@@ -346,6 +346,9 @@ class CircularBuffer {
     this.limit = Math.max(1, limit);
     this.items = [];
   }
+  clear() {
+    this.items = [];
+  }
   push(item) {
     this.items.push(item);
     if (this.items.length > this.limit) this.items.shift();
@@ -1269,6 +1272,7 @@ function pickSessionSnapshot(sessionsResult, sessionKey) {
   if (!session) return null;
   return {
     key: session.key || session.sessionKey || sessionKey,
+    sessionId: session.sessionId || '',
     totalTokens: toFiniteNumber(session.totalTokens ?? session.usage?.totalTokens),
     contextTokens: toFiniteNumber(session.contextTokens ?? session.modelContextWindow ?? session.contextWindow ?? session.usage?.contextTokens),
     contextWindow: toFiniteNumber(session.contextWindow ?? session.modelContextWindow ?? session.contextTokens),
@@ -2390,9 +2394,30 @@ async function mountPanel() {
   let archiveRefreshPromise = null;
   let prevCompactionPhase = '';
   let lastCompactionCompleteAt = 0;
+  let lastKnownSessionId = "";
   let prevSessionKey = "";
   let prevRunId = "";
   const eventsRendered = { current: false };
+
+  const applySessionRollover = (snapshot, nowTs = Date.now()) => {
+    const nextSessionId = String(snapshot?.sessionId || '').trim();
+    if (!nextSessionId) return false;
+    if (!lastKnownSessionId) {
+      lastKnownSessionId = nextSessionId;
+      return false;
+    }
+    if (lastKnownSessionId === nextSessionId) {
+      return false;
+    }
+    lastKnownSessionId = nextSessionId;
+    orchestrationResult = null;
+    events.clear();
+    for (const key of Object.keys(_renderCache)) delete _renderCache[key];
+    if (app?.sessionKey) {
+      events.push({ ts: nowTs, title: "新会话", detail: `${app.sessionKey} · ${nextSessionId.slice(-8)}` });
+    }
+    return true;
+  };
 
   attachEvents(panel, app, events);
 
@@ -2407,18 +2432,22 @@ async function mountPanel() {
       const result = await fetchSessions(app, { limit: 24 });
       if (result) {
         sessionsResult = result;
+        const nextArchiveSnapshot = pickSessionSnapshot(result, app.sessionKey);
+        const sessionRolled = applySessionRollover(nextArchiveSnapshot);
         // 补充 orchestration（如果 orchestration 文件不存在）
-        orchestrationResult = enrichOrchestrationFromSessions(orchestrationResult, result, app.sessionKey);
+        if (!sessionRolled) {
+          orchestrationResult = enrichOrchestrationFromSessions(orchestrationResult, result, app.sessionKey);
+        }
         if (syncFromSessions) {
           try {
             syncFromSessions(result, {
               activeSessionKey: app.sessionKey,
-              activeChildSessionKeys: collectActiveChildSessionKeys(orchestrationResult),
+              activeChildSessionKeys: sessionRolled ? [] : collectActiveChildSessionKeys(orchestrationResult),
             });
           } catch(e) { /* 静默 */ }
         }
         try { ActivityTracker.updateChildActivities(result); } catch(e) { /* 静默 */ }
-        archiveSnapshot = pickSessionSnapshot(result, app.sessionKey);
+        archiveSnapshot = nextArchiveSnapshot;
       }
       return archiveSnapshot;
     })()
@@ -2512,21 +2541,31 @@ async function mountPanel() {
     // ── 实时活动追踪（每次 tick 都更新，不等 API） ──
     ActivityTracker.update(app);
 
-    const signature = JSON.stringify({
+    const signatureState = {
       sessionKey: app.sessionKey,
       agentId: app.assistantAgentId,
       connected: app.connected,
       sending: app.chatSending,
       runId: app.chatRunId,
       messageCount: Array.isArray(app.chatMessages) ? app.chatMessages.length : 0,
-    });
+    };
+    const signature = JSON.stringify(signatureState);
 
     if (signature !== lastSignature) {
       const prev = lastSignature ? JSON.parse(lastSignature) : null;
       if (prev?.sessionKey !== app.sessionKey) {
+        lastKnownSessionId = "";
         if (app.sessionKey) {
           events.push({ ts: now, title: "会话变化", detail: app.sessionKey });
         }
+        lastFetchAt = 0;
+        lastArchiveFetchAt = 0;
+        archiveSnapshot = null;
+        orchestrationResult = null;
+        agentsResult = null;
+        sessionsResult = null;
+      } else if ((Number(prev?.messageCount) || 0) > 0 && signatureState.messageCount === 0) {
+        // /new 会清空消息但保留 sessionKey；强制本轮立即重取 sessions，避免旧天罡残留一整个刷新周期。
         lastFetchAt = 0;
         lastArchiveFetchAt = 0;
         archiveSnapshot = null;
@@ -2552,14 +2591,16 @@ async function mountPanel() {
       lastFetchAt = now;
       agentsResult = await fetchAgents(app);
       sessionsResult = await fetchSessions(app);
-      orchestrationResult = await fetchTeamOrchestration(app);
+      const nextArchiveSnapshot = pickSessionSnapshot(sessionsResult, app.sessionKey);
+      const sessionRolled = applySessionRollover(nextArchiveSnapshot, now);
+      orchestrationResult = sessionRolled ? null : await fetchTeamOrchestration(app);
       // 当 orchestration 文件缺失时，从 sessions.list 的 spawnedBy 字段发现子 agent
       orchestrationResult = enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, app.sessionKey);
       if (sessionsResult && syncFromSessions) {
         try {
           syncFromSessions(sessionsResult, {
             activeSessionKey: app.sessionKey,
-            activeChildSessionKeys: collectActiveChildSessionKeys(orchestrationResult),
+            activeChildSessionKeys: sessionRolled ? [] : collectActiveChildSessionKeys(orchestrationResult),
           });
         } catch(e) { /* store 未初始化，静默跳过 */ }
         console.log('[panel] after syncFromSessions => teamTaskStore.children.length:', teamTaskStore?.getState()?.children?.length);
@@ -2567,7 +2608,7 @@ async function mountPanel() {
       // ── 从 sessions 数据更新子 agent 活动缓存 ──
       if (sessionsResult) {
         try { ActivityTracker.updateChildActivities(sessionsResult); } catch(e) { /* 静默 */ }
-        archiveSnapshot = pickSessionSnapshot(sessionsResult, app.sessionKey) || archiveSnapshot;
+        archiveSnapshot = nextArchiveSnapshot || archiveSnapshot;
         lastArchiveFetchAt = now;
       }
     }

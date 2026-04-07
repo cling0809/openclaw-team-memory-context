@@ -14,7 +14,8 @@
     "url": "git+https://github.com/cling0809/openclaw-team-memory-context.git"
   },
   "bin": {
-    "openclaw": "openclaw.mjs"
+    "openclaw": "openclaw.mjs",
+    "oc-web": "oc-web.mjs"
   },
   "directories": {
     "doc": "docs",
@@ -24,6 +25,7 @@
     "CHANGELOG.md",
     "LICENSE",
     "openclaw.mjs",
+    "oc-web.mjs",
     "README.md",
     "UPSTREAM_COMPARISON.md",
     "assets/",
@@ -997,6 +999,7 @@
     "./cli-entry": "./openclaw.mjs"
   },
   "scripts": {
+    "oc-web": "node oc-web.mjs",
     "public:setup": "node scripts/setup-public-home.mjs",
     "public:refresh": "node scripts/setup-public-home.mjs --force",
     "public:gateway": "node scripts/run-public.mjs gateway",

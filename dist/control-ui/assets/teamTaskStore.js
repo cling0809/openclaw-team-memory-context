@@ -229,6 +229,7 @@ function injectCompanionCSS() {
  *
  * @typedef {Object} TeamTaskObject
  * @property {string} sessionKey        - 当前 session key
+ * @property {string} sessionId         - 当前 session id
  * @property {string} objective         - 当前总目标
  * @property {Phase} phase              - 当前阶段
  * @property {TaskStatus} status        - 任务整体状态
@@ -359,6 +360,7 @@ const INITIAL_STATE = {
   agentDefaultModel: '',
   sessionActualModel: '',
   sessionKey: '',
+  sessionId: '',
   latestBoundary: null,
   latestBoundaryId: '',
   latestBoundaryAt: 0,
@@ -943,21 +945,26 @@ function syncFromSessions(sessionsInput, options = {}) {
       : parentSessions[0] || null;
     const topSessionKey = topSession?.key || '';
     const resolvedSessionKey = requestedSessionKey || topSessionKey;
-    const sessionMismatch = !!resolvedSessionKey && s.sessionKey !== resolvedSessionKey;
-    const sessionChanged = !!s.sessionKey && sessionMismatch;
-    const baseState = sessionMismatch
+    const resolvedSessionId = pickSessionText(topSession?.sessionId);
+    // /new 会滚动 sessionId，但 sessionKey 会保持不变；这里要按真正的 session rollover 重置。
+    const sessionKeyMismatch = !!resolvedSessionKey && s.sessionKey !== resolvedSessionKey;
+    const sessionIdMismatch = !sessionKeyMismatch && !!resolvedSessionId && s.sessionId !== resolvedSessionId;
+    const sessionReset = sessionKeyMismatch || sessionIdMismatch;
+    const sessionChanged = !!(s.sessionKey || s.sessionId) && sessionReset;
+    const baseState = sessionReset
       ? {
           ...INITIAL_STATE,
           createdAt: now,
           updatedAt: now,
           sessionKey: resolvedSessionKey,
+          sessionId: resolvedSessionId,
           lead: s.lead || INITIAL_STATE.lead,
           support: Array.isArray(s.support) ? s.support : INITIAL_STATE.support,
           verify: s.verify || INITIAL_STATE.verify,
           review: s.review || INITIAL_STATE.review,
         }
       : s;
-    const persistedChildSessionKeys = sessionMismatch
+    const persistedChildSessionKeys = sessionReset
       ? []
       : (baseState.children || []).map((child) => String(child?.sessionKey || '').trim()).filter(Boolean);
     const scopedChildSessionKeys = new Set([...requestedChildSessionKeys, ...persistedChildSessionKeys]);
@@ -965,7 +972,7 @@ function syncFromSessions(sessionsInput, options = {}) {
       ? allChildSessions.filter(sess => scopedChildSessionKeys.has(String(sess?.key || '')))
       : requestedSessionKey
         ? []
-        : (sessionMismatch ? [] : allChildSessions);
+        : (sessionReset ? [] : allChildSessions);
     const sameTopSession = !!resolvedSessionKey && !!topSessionKey && resolvedSessionKey === topSessionKey;
     console.log(
       '[teamTaskStore] sessions received:',
@@ -980,17 +987,24 @@ function syncFromSessions(sessionsInput, options = {}) {
 
     // ── [Tranche 14 fix] 新会话切换时重置 children 和 timeline ─────────────
     const prevSessionKey = s.sessionKey;
-    if (sessionMismatch) {
+    const prevSessionId = s.sessionId;
+    const formatSessionMarker = (value) => {
+      const text = String(value || '').trim();
+      return text ? (text.length > 8 ? `${text.slice(-8)}…` : text) : 'unknown';
+    };
+    if (sessionReset) {
       // 清除旧 session 的 child status 记录，防止新 session subagent 被误判为状态变化
       __prevChildStatus.clear();
     }
     if (sessionChanged) {
+      const prevSessionRef = sessionKeyMismatch ? prevSessionKey : (prevSessionId || prevSessionKey);
+      const nextSessionRef = sessionKeyMismatch ? resolvedSessionKey : (resolvedSessionId || resolvedSessionKey);
       // 记录会话切换事件
       timelineAdditions.push({
         ts: now,
         type: 'task_progress',
         agentId: 'system',
-        content: `切换会话 ${prevSessionKey.slice(-8)}… → ${resolvedSessionKey.slice(-8)}…`,
+        content: `${sessionKeyMismatch ? '切换会话' : '新会话'} ${formatSessionMarker(prevSessionRef)} → ${formatSessionMarker(nextSessionRef)}`,
       });
     }
 
@@ -1138,7 +1152,7 @@ function syncFromSessions(sessionsInput, options = {}) {
       !updatedKeys.has(c.sessionKey) &&
       c.status !== 'timed_out' && c.status !== 'done' && c.status !== 'failed' && c.status !== 'aborted'
     );
-    const mergedChildren = sessionMismatch ? updatedChildren : [...updatedChildren, ...staleChildren];
+    const mergedChildren = sessionReset ? updatedChildren : [...updatedChildren, ...staleChildren];
 
     return {
       ...baseState,
@@ -1152,6 +1166,7 @@ function syncFromSessions(sessionsInput, options = {}) {
       recommendedAction: nextRecommendedAction || 'none',
       compactionCount: nextCompactionCount,
       sessionKey: resolvedSessionKey,
+      sessionId: resolvedSessionId,
       objective: nextObjectiveDigest || baseState.objective,
       currentObjectiveDigest: nextObjectiveDigest,
       openIssuesDigest: nextOpenIssuesDigest,

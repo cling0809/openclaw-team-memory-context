@@ -387,7 +387,6 @@
       },
       "minimax": {
         "api": "anthropic-messages",
-        "apiKey": "${MINIMAX_API_KEY}",
         "authHeader": true,
         "baseUrl": "https://api.minimaxi.com/anthropic",
         "models": [

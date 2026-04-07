@@ -58,7 +58,7 @@ const CONFIG = {
   
   // 小模型配置（用于 side-query）
   SMALL_MODEL: {
-    provider: 'minimax-cn',
+    provider: 'minimax',
     model: 'MiniMax-M2',
   },
 };

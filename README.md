@@ -48,7 +48,7 @@ pnpm install
 pnpm public:setup
 pnpm public:onboard
 pnpm public:gateway
-# 新开一个终端查看 dashboard 地址
+# 新开一个终端查看 dashboard 地址（等价入口：pnpm oc-web）
 pnpm public:dashboard
 ```
 
@@ -56,10 +56,11 @@ pnpm public:dashboard
 
 - `public:setup` 会在仓库根目录下创建 `.openclaw-public/` 本地状态目录，并生成脱敏后的 `openclaw.json`。
 - `public:setup` 还会生成每个 agent 的角色工作区骨架，保留不良人人设、协作规则和共享 workspace 快照。
-- `public:setup` 现在还会预建 `.openclaw-public/agents/<id>/{agent,sessions}`，并在检测到 `MINIMAX_API_KEY` 时自动把主 agent 的 MiniMax 认证写入并镜像到所有角色 agent，避免派工时各自找不到 auth store。
+- `public:setup` 现在还会预建 `.openclaw-public/agents/<id>/{agent,sessions}`，并在检测到 `MINIMAX_API_KEY` 时自动把主 agent 的 MiniMax 认证写入并镜像到所有角色 agent；如果你本机已经有 `~/.openclaw/agents/*/agent/auth-profiles.json`，也会优先导入现成认证，避免派工时各自找不到 auth store。
 - `public:onboard` 会自动带上本地状态目录、模板配置和本仓库的 `workspace/` 路径。
 - `public:gateway` 会用同一套本地配置启动 Gateway。
 - `public:dashboard` 会打印当前公开版实例的 dashboard URL，并自动在浏览器打开。
+- `oc-web` 是 `public:dashboard` 的公开版别名；在仓库里可直接用 `pnpm oc-web`，全局安装后可直接执行 `oc-web`。
 - `public:token` 会打印当前公开版实例使用的 gateway token，便于首次连接 Control UI。
 - `public:devices:list` 和 `public:devices:approve` 用来处理复用旧浏览器状态时残留的配对请求。
 - `public:refresh` 会用最新公开模板重写本地 `.openclaw-public/openclaw.json` 和角色工作区骨架，适合拉到新版本后刷新体验。
@@ -70,6 +71,8 @@ pnpm public:dashboard
 - 仓库已经包含可直接运行的 OpenClaw CLI 入口和预编译 `dist/`，不需要你先自己构建 TypeScript 输出。
 - clone 下来后，按上面的步骤执行 `pnpm install`、`pnpm public:setup`，再进入 `pnpm public:onboard` 或 `pnpm public:gateway` 即可开始使用。
 - 如果你已经有 MiniMax key，最快路径是先在当前 shell 里设置 `MINIMAX_API_KEY`，再执行 `pnpm public:setup` 或 `pnpm public:refresh`；公开版脚本会把它写进 main agent 的 auth store，并同步到所有角色 agent。
+- 如果你机器上原本就有可用的 `~/.openclaw` 运行态，公开版脚本也会自动把现成的 `auth-profiles.json` 导入到 `.openclaw-public/agents/*/agent/`，这样主 agent 和角色 agent 不需要重新逐个配对。
+- 即使当前 shell 没有导出 `MINIMAX_API_KEY`，只要 main agent 已经有 `auth-profiles.json`，`public:gateway` 也能正常启动；它不会再被模板里的占位 env 直接拦住。
 - 公开版初始化会自动补齐 `gateway.mode=local` 和本地 token 认证，避免不同机器上出现未配置网关或首次连接无法鉴权的问题。
 - 公开模板默认启用了 `gateway.controlUi.allowInsecureAuth=true`，尽量避免首次通过本地 HTTP 打开 Control UI 时被设备配对拦住写操作或子 agent 派工。
 - 公开模板已经对齐到当前 OpenClaw 的 MiniMax provider ID（`minimax`），不会再出现新版本 onboard 已经写入 MiniMax 凭据，但公开模板仍然去找过期 `minimax-cn` provider 的错位。
@@ -153,9 +156,22 @@ pnpm public:refresh
 pnpm public:gateway
 ```
 
-- `public:refresh` 现在会把旧版公开模板里的 `minimax-cn` 引用迁移到当前版本真实使用的 `minimax` provider。
+- `public:refresh` 现在会同时迁移旧版公开模板和已导入 `auth-profiles.json` 里的 `minimax-cn` 引用，统一切到当前版本真实使用的 `minimax` provider。
+- `public:refresh` 也会顺手清掉旧模板遗留的 `${MINIMAX_API_KEY}` 占位配置，避免 Gateway 在 auth store 已经存在时仍然因为缺少环境变量而拒绝启动。
 - 如果 main agent 已经有 auth store，包装脚本会在下一次运行时自动把同一份 auth-profiles 同步到 coder、research、qa 等角色 agent，避免子 agent 派工时报各自缺 key。
 - 如果你更想走交互式配置，也可以重新运行 `pnpm public:onboard`；当前 OpenClaw 版本会使用新的 MiniMax provider 选项写入正确的 auth store。
+
+### `oc-web` 打不开 / 显示无法访问
+
+公开版现在提供两种等价入口：
+
+```bash
+pnpm oc-web
+pnpm public:dashboard
+```
+
+- 如果你在作者私有环境里习惯直接输入 `oc-web`，公开仓库里对应的是上面的别名入口；全局安装本包后也可以直接运行 `oc-web`。
+- 如果浏览器打开后仍然无法访问，先确认 `pnpm public:gateway` 正常启动；当前公开模板已经不会再因为缺失 `MINIMAX_API_KEY` 环境变量而把 Gateway 启动直接拦死。
 
 ## Showcase
 

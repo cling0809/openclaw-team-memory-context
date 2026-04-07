@@ -61,18 +61,85 @@
         } catch (e) {}
       })();
     </script>
-    <script type="module" crossorigin src="./assets/index-D7mg1IkY.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/event-stream-D331Z3W4.js">
+    <script>
+      (function () {
+        function normalizeGatewayUrl(raw) {
+          var value = (raw || "").trim();
+          if (!value) return "default";
+          try {
+            var base = location.protocol + "//" + location.host + (location.pathname || "/");
+            var parsed = new URL(value, base);
+            var path = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/+$/, "") || parsed.pathname;
+            return parsed.protocol + "//" + parsed.host + path;
+          } catch (e) {
+            return value;
+          }
+        }
+
+        function parseHashToken() {
+          try {
+            var hash = window.location.hash || "";
+            if (!hash || hash.indexOf("token=") === -1) return "";
+            return new URLSearchParams(hash.replace(/^#/, "")).get("token") || "";
+          } catch (e) {
+            return "";
+          }
+        }
+
+        function currentGatewayUrl() {
+          var ws = location.protocol === "https:" ? "wss" : "ws";
+          return ws + "://" + location.host;
+        }
+
+        try {
+          var token = parseHashToken();
+          if (!token) return;
+          var gatewayUrl = currentGatewayUrl();
+          var normalized = normalizeGatewayUrl(gatewayUrl);
+          var sessionKey = "main";
+          var storage = {
+            gatewayUrl: gatewayUrl,
+            sessionKey: sessionKey,
+            lastActiveSessionKey: sessionKey,
+            theme: "claw",
+            themeMode: "system",
+            chatFocusMode: false,
+            chatShowThinking: true,
+            chatShowToolCalls: true,
+            splitRatio: 0.6,
+            navCollapsed: false,
+            navWidth: 220,
+            navGroupsCollapsed: {},
+            borderRadius: 50,
+            sessionsByGateway: {}
+          };
+          storage.sessionsByGateway[normalized] = {
+            sessionKey: sessionKey,
+            lastActiveSessionKey: sessionKey
+          };
+          try {
+            localStorage.setItem("openclaw.control.settings.v1:" + normalized, JSON.stringify(storage));
+            localStorage.setItem("openclaw.control.settings.v1", JSON.stringify(storage));
+          } catch (e) {}
+          try {
+            sessionStorage.removeItem("openclaw.control.token.v1");
+            sessionStorage.setItem("openclaw.control.token.v1:" + normalized, token);
+          } catch (e) {}
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-Bx1QDj3a.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/event-stream-B8X6sYaV.js">
     <link rel="modulepreload" crossorigin href="./assets/preload-helper-xBbMyY7u.js">
     <link rel="modulepreload" crossorigin href="./assets/lit-zdTgzAJI.js">
     <link rel="modulepreload" crossorigin href="./assets/directive-C6NBp6xJ.js">
-    <link rel="modulepreload" crossorigin href="./assets/format-Cbj45nru.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-Bhjki1_a.css">
+    <link rel="modulepreload" crossorigin href="./assets/format-nUIQxx1z.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-D-SPkk8b.css">
   </head>
   <body>
     <openclaw-app></openclaw-app>
     <script type="module">
-      const PANEL_ASSET_VERSION = "public-buliang-ui-20260407";
+      const PANEL_ASSET_VERSION = "public-buliang-ui-20260407-ui2026.4.2";
       const PANEL_SCRIPTS = [
         `./assets/teamTaskStore.js?t=${PANEL_ASSET_VERSION}`,
         `./assets/buli-team-panel.js?t=${PANEL_ASSET_VERSION}`,
@@ -86,13 +153,11 @@
       function mountPanelAssets() {
         if (window.__OPENCLAW_PANEL_ASSETS_LOADED__ === PANEL_ASSET_VERSION) return true;
         window.__OPENCLAW_PANEL_ASSETS_LOADED__ = PANEL_ASSET_VERSION;
-
         const link = document.createElement("link");
         link.rel = "stylesheet";
         link.crossOrigin = "";
         link.href = PANEL_STYLE;
         document.head.appendChild(link);
-
         for (const src of PANEL_SCRIPTS) {
           import(src).catch((err) => {
             console.error("[panel-loader] failed to import", src, err);
