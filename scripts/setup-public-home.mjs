@@ -859,6 +859,8 @@ function ensurePublicGatewayDefaults(config, fallbackToken) {
 
   const auth = gateway.auth && typeof gateway.auth === "object" && !Array.isArray(gateway.auth) ? gateway.auth : {};
   gateway.auth = auth;
+  const remote = gateway.remote && typeof gateway.remote === "object" && !Array.isArray(gateway.remote) ? gateway.remote : {};
+  gateway.remote = remote;
 
   const hasToken = typeof auth.token === "string" && auth.token.trim().length > 0;
   const hasPassword = typeof auth.password === "string" && auth.password.trim().length > 0;
@@ -875,6 +877,17 @@ function ensurePublicGatewayDefaults(config, fallbackToken) {
 
   if (auth.mode === "token" && !hasToken) {
     auth.token = fallbackToken;
+  }
+
+  const resolvedToken = typeof auth.token === "string" ? auth.token.trim() : "";
+  const resolvedPassword = typeof auth.password === "string" ? auth.password.trim() : "";
+
+  if (auth.mode === "token" && resolvedToken) {
+    remote.token = resolvedToken;
+    delete remote.password;
+  } else if (auth.mode === "password" && resolvedPassword) {
+    remote.password = resolvedPassword;
+    delete remote.token;
   }
 
   return next;

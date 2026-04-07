@@ -34,6 +34,9 @@
       "enabled": true,
       "allowInsecureAuth": true
     },
+    "remote": {
+      "token": "__GATEWAY_TOKEN__"
+    },
     "auth": {
       "mode": "token",
       "token": "__GATEWAY_TOKEN__"
