@@ -1,0 +1,161 @@
+{
+  "gateway": {
+    "bind": "loopback",
+    "port": 18789
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "__WORKSPACE_DIR__",
+      "thinkingDefault": "high",
+      "verboseDefault": "on",
+      "timeoutSeconds": 900,
+      "maxConcurrent": 4,
+      "elevatedDefault": "on",
+      "contextPruning": {
+        "mode": "cache-ttl"
+      },
+      "compaction": {
+        "mode": "default",
+        "memoryFlush": {
+          "enabled": true
+        }
+      },
+      "memorySearch": {
+        "enabled": true,
+        "sources": [
+          "memory",
+          "sessions"
+        ],
+        "query": {
+          "maxResults": 8,
+          "hybrid": {
+            "enabled": true,
+            "mmr": {
+              "enabled": true,
+              "lambda": 0.7
+            },
+            "temporalDecay": {
+              "enabled": true,
+              "halfLifeDays": 30
+            }
+          }
+        },
+        "sync": {
+          "onSessionStart": true,
+          "onSearch": true,
+          "watch": true
+        },
+        "cache": {
+          "enabled": true,
+          "maxEntries": 5000
+        },
+        "experimental": {
+          "sessionMemory": true
+        }
+      },
+      "model": {
+        "primary": "github-copilot/gpt-5.4",
+        "fallbacks": []
+      },
+      "models": {
+        "github-copilot/gpt-5.4": {
+          "alias": "default"
+        },
+        "github-copilot/claude-opus-4.6": {
+          "alias": "claude"
+        },
+        "google/gemini-3-pro-preview": {
+          "alias": "gemini"
+        }
+      },
+      "subagents": {
+        "maxChildrenPerAgent": 4,
+        "maxConcurrent": 6,
+        "maxSpawnDepth": 3,
+        "runTimeoutSeconds": 900,
+        "model": "github-copilot/gpt-5.4"
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "default": true,
+        "name": "Main Coordinator",
+        "identity": {
+          "emoji": "🦞",
+          "name": "Main Coordinator",
+          "theme": "project orchestration"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ],
+          "requireAgentId": true
+        }
+      },
+      {
+        "id": "coder",
+        "name": "Coder",
+        "identity": {
+          "emoji": "🛠️",
+          "name": "Coder",
+          "theme": "implementation"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__"
+      },
+      {
+        "id": "research",
+        "name": "Research",
+        "identity": {
+          "emoji": "📚",
+          "name": "Research",
+          "theme": "analysis"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__"
+      },
+      {
+        "id": "frontend",
+        "name": "Frontend",
+        "identity": {
+          "emoji": "🎨",
+          "name": "Frontend",
+          "theme": "ui and polish"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__"
+      },
+      {
+        "id": "qa",
+        "name": "QA",
+        "identity": {
+          "emoji": "🧪",
+          "name": "QA",
+          "theme": "verification"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__"
+      },
+      {
+        "id": "reviewer",
+        "name": "Reviewer",
+        "identity": {
+          "emoji": "🔍",
+          "name": "Reviewer",
+          "theme": "risk review"
+        },
+        "thinkingDefault": "high",
+        "reasoningDefault": "stream",
+        "workspace": "__WORKSPACE_DIR__"
+      }
+    ]
+  }
+}
