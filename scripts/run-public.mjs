@@ -28,7 +28,7 @@ async function main() {
         OPENCLAW_HOME: prepared.stateDir,
         OPENCLAW_STATE_DIR: prepared.stateDir,
         OPENCLAW_CONFIG_PATH: prepared.configPath,
-        OPENCLAW_WORKSPACE: prepared.workspaceDir,
+        OPENCLAW_WORKSPACE: prepared.mainWorkspaceDir,
       },
     },
   );

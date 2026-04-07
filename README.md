@@ -34,6 +34,7 @@
 - 团队派工、任务状态持久化和多角色协作编排
 - 可执行 skill 模板、工具 hook 和重试基础设施
 - 不良人总谱风格的 Control UI 扩展和智能体身份体系
+- 更接近作者本地日常使用体验的安全公开配置包
 
 ## 快速开始
 
@@ -54,10 +55,12 @@ pnpm public:dashboard -- --no-open
 说明：
 
 - `public:setup` 会在仓库根目录下创建 `.openclaw-public/` 本地状态目录，并生成脱敏后的 `openclaw.json`。
+- `public:setup` 还会生成每个 agent 的角色工作区骨架，保留不良人人设、协作规则和共享 workspace 快照。
 - `public:onboard` 会自动带上本地状态目录、模板配置和本仓库的 `workspace/` 路径。
 - `public:gateway` 会用同一套本地配置启动 Gateway。
 - `public:dashboard` 会打印当前公开版实例的 dashboard URL。
 - `public:token` 会打印当前公开版实例使用的 gateway token，便于首次连接 Control UI。
+- `public:refresh` 会用最新公开模板重写本地 `.openclaw-public/openclaw.json` 和角色工作区骨架，适合拉到新版本后刷新体验。
 
 是否可以直接用：
 
@@ -65,7 +68,14 @@ pnpm public:dashboard -- --no-open
 - 仓库已经包含可直接运行的 OpenClaw CLI 入口和预编译 `dist/`，不需要你先自己构建 TypeScript 输出。
 - clone 下来后，按上面的步骤执行 `pnpm install`、`pnpm public:setup`，再进入 `pnpm public:onboard` 或 `pnpm public:gateway` 即可开始使用。
 - 公开版初始化会自动补齐 `gateway.mode=local` 和本地 token 认证，避免不同机器上出现未配置网关或首次连接无法鉴权的问题。
+- 公开版还会同步安全可公开的模型别名、技能启用、工具配置、浏览器能力和不良人多工作区骨架，让整体体验更接近作者本地日常使用的版本。
 - 本仓库默认把本地运行态写入 `.openclaw-public/`，不会污染版本库。
+
+如果你是旧版本用户，想把本地体验升级到当前这版，而不是只补缺失字段，执行：
+
+```bash
+pnpm public:refresh
+```
 
 如果你只想直接体验 agent：
 
@@ -83,10 +93,16 @@ pnpm public:agent -- --message "hello"
 
 公开模板里的智能体身份也已经切换为不良人设定，详细列表见 [AGENT_IDENTITIES.md](AGENT_IDENTITIES.md)。
 
+除了 UI 和名字，公开版现在还会生成一套不含私人数据的角色工作区骨架，尽量贴近作者本地的真实使用方式：
+
+- 每个 agent 都有自己的 `AGENTS.md`、`IDENTITY.md`、`SOUL.md`、`USER.md`、`MEMORY.md`
+- 每个角色工作区都会带一份共享 `workspace/` 快照，便于保留相同的 skill 和增强层上下文
+- 保留了安全可公开的工具、技能、模型别名和浏览器能力配置
+
 如果你之前已经生成过本地 `.openclaw-public/openclaw.json`，想把 agent 身份一起刷新到新版模板，可执行：
 
 ```bash
-pnpm public:setup -- --force
+pnpm public:refresh
 ```
 
 ## 常见问题
@@ -168,5 +184,12 @@ pnpm public:token
 ## 开源边界
 
 这个仓库刻意没有包含任何私人运行态数据。日常使用时，新产生的本地状态会写入 `.openclaw-public/`，并且已经被 [.gitignore](.gitignore) 排除。
+
+为了尽量保留作者的使用体验，公开版已经同步了 UI、人设、多工作区骨架和安全可公开的运行配置；但以下内容仍然不会包含在仓库或模板里：
+
+- 真实对话记录和 session 日志
+- 真实 API key、OAuth token、设备令牌
+- 飞书等外部渠道的私有凭据
+- 私人研究资料、个人任务、历史工作目录
 
 如果你继续在这个仓库上开发，建议把所有个人状态都留在 `.openclaw-public/` 下，不要写回仓库追踪文件。

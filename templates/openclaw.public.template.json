@@ -3,19 +3,87 @@
     "mode": "local",
     "bind": "loopback",
     "port": 18789,
+    "http": {
+      "endpoints": {
+        "chatCompletions": {
+          "enabled": true
+        },
+        "responses": {
+          "enabled": true,
+          "files": {
+            "allowUrl": true
+          },
+          "images": {
+            "allowUrl": true
+          }
+        }
+      }
+    },
+    "nodes": {
+      "denyCommands": []
+    },
+    "reload": {
+      "debounceMs": 500,
+      "mode": "hybrid"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
     "auth": {
       "mode": "token",
       "token": "__GATEWAY_TOKEN__"
     }
   },
+  "auth": {
+    "order": {
+      "github-copilot": [
+        "github-copilot:github"
+      ],
+      "openai-codex": [
+        "openai-codex:default"
+      ]
+    },
+    "profiles": {
+      "github-copilot:github": {
+        "mode": "token",
+        "provider": "github-copilot"
+      },
+      "google:default": {
+        "mode": "api_key",
+        "provider": "google"
+      },
+      "minimax-cn:default": {
+        "mode": "api_key",
+        "provider": "minimax-cn"
+      },
+      "minimax-portal:default": {
+        "mode": "oauth",
+        "provider": "minimax-portal"
+      },
+      "openai-codex:default": {
+        "mode": "oauth",
+        "provider": "openai-codex"
+      }
+    }
+  },
   "agents": {
     "defaults": {
-      "workspace": "__WORKSPACE_DIR__",
+      "workspace": "__AGENT_WORKSPACE_MAIN_DIR__",
       "thinkingDefault": "high",
       "verboseDefault": "on",
       "timeoutSeconds": 900,
       "maxConcurrent": 4,
       "elevatedDefault": "on",
+      "imageGenerationModel": {
+        "primary": "google/gemini-3-pro-image-preview"
+      },
+      "imageModel": {
+        "primary": "google/gemini-3-pro-preview",
+        "fallbacks": [
+          "google/gemini-3-flash-preview"
+        ]
+      },
       "contextPruning": {
         "mode": "cache-ttl"
       },
@@ -59,26 +127,58 @@
         }
       },
       "model": {
-        "primary": "github-copilot/gpt-5.4",
+        "primary": "minimax-cn/MiniMax-M2.7",
         "fallbacks": []
       },
       "models": {
-        "github-copilot/gpt-5.4": {
-          "alias": "default"
+        "codex-cli/gpt-5.3-codex": {},
+        "codex-cli/gpt-5.4": {
+          "alias": "codex-cli"
         },
         "github-copilot/claude-opus-4.6": {
-          "alias": "claude"
+          "alias": "copilot-opus"
+        },
+        "github-copilot/gemini-3.1-pro-preview": {
+          "alias": "copilot-gemini"
+        },
+        "github-copilot/gpt-4o": {
+          "alias": "copilot-4o"
+        },
+        "github-copilot/gpt-5.2": {
+          "alias": "copilot-gpt52"
+        },
+        "github-copilot/gpt-5.2-codex": {
+          "alias": "copilot-codex"
+        },
+        "github-copilot/gpt-5.4": {
+          "alias": "copilot-gpt"
+        },
+        "google/gemini-3-flash-preview": {
+          "alias": "gemini-flash"
         },
         "google/gemini-3-pro-preview": {
           "alias": "gemini"
-        }
+        },
+        "minimax-cn/MiniMax-M2.1": {
+          "alias": "minimax-m2.1"
+        },
+        "minimax-cn/MiniMax-M2.5": {
+          "alias": "minimax-m2.5"
+        },
+        "minimax-cn/MiniMax-M2.7": {
+          "alias": "minimax-m2.7"
+        },
+        "openai-codex/gpt-5.3-codex": {
+          "alias": "codex"
+        },
+        "openai-codex/gpt-5.4": {}
       },
       "subagents": {
         "maxChildrenPerAgent": 4,
         "maxConcurrent": 6,
         "maxSpawnDepth": 3,
         "runTimeoutSeconds": 900,
-        "model": "github-copilot/gpt-5.4"
+        "model": "minimax-cn/MiniMax-M2.7"
       }
     },
     "list": [
@@ -91,9 +191,13 @@
           "name": "不良帅·李星云（天暗星）",
           "theme": "总控调度·不良帅"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__",
+        "workspace": "__AGENT_WORKSPACE_MAIN_DIR__",
         "subagents": {
           "allowAgents": [
             "*"
@@ -108,9 +212,18 @@
           "name": "天祐星·石瑶",
           "theme": "稳健的工程实现者"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__"
+        "workspace": "__AGENT_WORKSPACE_CODER_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
       },
       {
         "id": "code-assist",
@@ -120,9 +233,18 @@
           "name": "天速星·段成天",
           "theme": "快速补位、读改并行的代码助手"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__"
+        "workspace": "__AGENT_WORKSPACE_CODE_ASSIST_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
       },
       {
         "id": "research",
@@ -132,9 +254,18 @@
           "name": "天慧星·慧明",
           "theme": "中文优先的资料分析师"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__"
+        "workspace": "__AGENT_WORKSPACE_RESEARCH_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
       },
       {
         "id": "frontend",
@@ -144,9 +275,18 @@
           "name": "天巧星·上官云阙",
           "theme": "懂设计也能落代码的界面打磨者"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__"
+        "workspace": "__AGENT_WORKSPACE_FRONTEND_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
       },
       {
         "id": "qa",
@@ -156,9 +296,18 @@
           "name": "天损星·陆佑劫",
           "theme": "喜欢复现问题和守住回归线的验证者"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__"
+        "workspace": "__AGENT_WORKSPACE_QA_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
       },
       {
         "id": "reviewer",
@@ -168,10 +317,332 @@
           "name": "天罪星·镜心魔",
           "theme": "专挑风险和漏洞的把关者"
         },
+        "model": {
+          "primary": "minimax-cn/MiniMax-M2.7",
+          "fallbacks": []
+        },
         "thinkingDefault": "high",
         "reasoningDefault": "stream",
-        "workspace": "__WORKSPACE_DIR__"
+        "workspace": "__AGENT_WORKSPACE_REVIEWER_DIR__",
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
       }
     ]
+  },
+  "browser": {
+    "enabled": true,
+    "evaluateEnabled": true,
+    "headless": true
+  },
+  "commands": {
+    "native": true,
+    "nativeSkills": true,
+    "ownerDisplay": "raw",
+    "restart": true
+  },
+  "discovery": {
+    "mdns": {
+      "mode": "minimal"
+    },
+    "wideArea": {
+      "enabled": false
+    }
+  },
+  "env": {
+    "shellEnv": {
+      "enabled": true
+    }
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "boot-md": {
+          "enabled": true
+        },
+        "bootstrap-extra-files": {
+          "enabled": true
+        },
+        "command-logger": {
+          "enabled": true
+        },
+        "session-memory": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "models": {
+    "providers": {
+      "google": {
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "models": []
+      },
+      "minimax-cn": {
+        "api": "anthropic-messages",
+        "authHeader": true,
+        "baseUrl": "https://api.minimaxi.com/anthropic",
+        "models": [
+          {
+            "id": "MiniMax-M2.1",
+            "name": "MiniMax M2.1",
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "input": [
+              "text"
+            ],
+            "reasoning": false,
+            "cost": {
+              "input": 0.3,
+              "output": 1.2,
+              "cacheRead": 0.03,
+              "cacheWrite": 0.12
+            }
+          },
+          {
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax M2.5",
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "input": [
+              "text"
+            ],
+            "reasoning": true,
+            "cost": {
+              "input": 0.3,
+              "output": 1.2,
+              "cacheRead": 0.03,
+              "cacheWrite": 0.12
+            }
+          },
+          {
+            "id": "MiniMax-M2.7",
+            "name": "MiniMax M2.7",
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "input": [
+              "text"
+            ],
+            "reasoning": true,
+            "cost": {
+              "input": 0.3,
+              "output": 1.2,
+              "cacheRead": 0.03,
+              "cacheWrite": 0.12
+            }
+          }
+        ]
+      },
+      "minimax-portal": {
+        "api": "anthropic-messages",
+        "apiKey": "minimax-oauth",
+        "baseUrl": "https://api.minimaxi.com/anthropic",
+        "models": [
+          {
+            "id": "MiniMax-M2.1",
+            "name": "MiniMax M2.1",
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "input": [
+              "text"
+            ],
+            "reasoning": false,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          },
+          {
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax M2.5",
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "input": [
+              "text"
+            ],
+            "reasoning": true,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          },
+          {
+            "id": "MiniMax-M2.7",
+            "name": "MiniMax M2.7",
+            "contextWindow": 200000,
+            "maxTokens": 8192,
+            "input": [
+              "text"
+            ],
+            "reasoning": true,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "nodeHost": {
+    "browserProxy": {
+      "enabled": true
+    }
+  },
+  "plugins": {
+    "entries": {
+      "browser": {
+        "enabled": true
+      },
+      "diffs": {
+        "enabled": true
+      },
+      "llm-task": {
+        "enabled": true
+      },
+      "lobster": {
+        "enabled": true
+      },
+      "minimax": {
+        "enabled": true
+      },
+      "open-prose": {
+        "enabled": true
+      },
+      "voice-call": {
+        "enabled": true
+      }
+    }
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "skills": {
+    "allowBundled": [],
+    "entries": {
+      "backend-brain": {
+        "enabled": true
+      },
+      "bug-hunt": {
+        "enabled": true
+      },
+      "china-research": {
+        "enabled": true
+      },
+      "code-review-hard": {
+        "enabled": true
+      },
+      "commit-craft": {
+        "enabled": true
+      },
+      "doc-curator": {
+        "enabled": true
+      },
+      "evidence-first": {
+        "enabled": true
+      },
+      "frontend-taste": {
+        "enabled": true
+      },
+      "logic-rigour": {
+        "enabled": true
+      },
+      "memory-keeper": {
+        "enabled": true
+      },
+      "prompt-polish-zh": {
+        "enabled": true
+      },
+      "release-guard": {
+        "enabled": true
+      },
+      "repo-dive": {
+        "enabled": true
+      },
+      "shell-safe": {
+        "enabled": true
+      },
+      "team-router": {
+        "enabled": true
+      },
+      "test-forge": {
+        "enabled": true
+      },
+      "ui-critic": {
+        "enabled": true
+      }
+    },
+    "install": {
+      "nodeManager": "npm"
+    },
+    "load": {
+      "extraDirs": [
+        "__WORKSPACE_DIR__/skills"
+      ],
+      "watch": true,
+      "watchDebounceMs": 250
+    }
+  },
+  "tools": {
+    "agentToAgent": {
+      "enabled": true
+    },
+    "elevated": {
+      "enabled": true
+    },
+    "exec": {
+      "ask": "off",
+      "security": "full"
+    },
+    "fs": {
+      "workspaceOnly": false
+    },
+    "links": {
+      "enabled": true,
+      "maxLinks": 10,
+      "timeoutSeconds": 20
+    },
+    "message": {
+      "broadcast": {
+        "enabled": true
+      },
+      "crossContext": {
+        "allowAcrossProviders": true,
+        "allowWithinProvider": true
+      }
+    },
+    "profile": "full",
+    "sessions": {
+      "visibility": "all"
+    },
+    "web": {
+      "fetch": {
+        "cacheTtlMinutes": 10,
+        "enabled": true,
+        "maxChars": 100000,
+        "timeoutSeconds": 30
+      }
+    }
+  },
+  "ui": {
+    "assistant": {
+      "avatar": "",
+      "name": "不良帅"
+    }
+  },
+  "update": {
+    "auto": {
+      "enabled": false
+    },
+    "channel": "stable"
   }
 }

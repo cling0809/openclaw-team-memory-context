@@ -998,6 +998,7 @@
   },
   "scripts": {
     "public:setup": "node scripts/setup-public-home.mjs",
+    "public:refresh": "node scripts/setup-public-home.mjs --force",
     "public:gateway": "node scripts/run-public.mjs gateway",
     "public:dashboard": "node scripts/run-public.mjs dashboard",
     "public:token": "node scripts/run-public.mjs config get gateway.auth.token",
