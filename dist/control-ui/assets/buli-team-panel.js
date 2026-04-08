@@ -1584,11 +1584,18 @@ function getArchiveCompactionMeta(compactionStatus, isLoading) {
   return null;
 }
 
+let TEAM_ORCHESTRATION_METHOD_SUPPORTED = true;
+
 async function fetchTeamOrchestration(app, sessionKey = app?.sessionKey) {
   if (!app?.client || !app.connected || !sessionKey) return null;
+  if (!TEAM_ORCHESTRATION_METHOD_SUPPORTED) return null;
   try {
     return await app.client.request("sessions.team_orchestration", { sessionKey });
-  } catch {
+  } catch (error) {
+    const message = String(error?.message || '').toLowerCase();
+    if (message.includes('unknown method') || message.includes('team_orchestration')) {
+      TEAM_ORCHESTRATION_METHOD_SUPPORTED = false;
+    }
     return null;
   }
 }
@@ -1983,7 +1990,47 @@ function deriveTeamStateFromMessageList(messages) {
   };
 }
 
+const CHAT_DERIVED_CACHE = {
+  signature: '',
+  value: null,
+};
+
+function buildChatMessageSignature(messages) {
+  const list = Array.isArray(messages) ? messages : [];
+  const tail = list.slice(-4).map((message) => {
+    const role = String(message?.role || '').trim();
+    const text = collectTextFragmentsDeep(message, [])
+      .join('\n')
+      .replace(/\s+/g, ' ')
+      .slice(-240);
+    return `${role}:${text}`;
+  }).join('|');
+  return `${list.length}|${tail}`;
+}
+
+function buildChatSurfaceSignature(limit = 10) {
+  if (typeof document === 'undefined') return '';
+  const thread = document.querySelector('.chat-main .chat-thread') || document.querySelector('.chat-thread');
+  if (!thread) return '';
+  return Array.from(thread.querySelectorAll('.chat-line'))
+    .slice(-limit)
+    .map((line) => {
+      const text = String(line.innerText || line.textContent || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(-180);
+      return `${line.className}:${text}`;
+    })
+    .join('|');
+}
+
 function deriveTeamStateFromChatMessages(app) {
+  const messageSignature = buildChatMessageSignature(Array.isArray(app?.chatMessages) ? app.chatMessages : []);
+  const domSignature = buildChatSurfaceSignature();
+  const signature = `${String(app?.sessionKey || '')}|${String(app?.chatRunId || '')}|${messageSignature}|${domSignature}`;
+  if (CHAT_DERIVED_CACHE.signature === signature) {
+    return CHAT_DERIVED_CACHE.value;
+  }
   const messageDerived = deriveTeamStateFromMessageList(Array.isArray(app?.chatMessages) ? app.chatMessages : []);
   const domDerived = deriveTeamStateFromMessageList(collectChatSurfaceMessages());
   const score = (state) => {
@@ -1993,7 +2040,10 @@ function deriveTeamStateFromChatMessages(app) {
     const objectiveScore = String(state.currentObjectiveDigest || state.objective || '').trim() ? 2 : 0;
     return children * 10 + live * 2 + objectiveScore;
   };
-  return score(domDerived) >= score(messageDerived) ? domDerived : messageDerived;
+  const best = score(domDerived) >= score(messageDerived) ? domDerived : messageDerived;
+  CHAT_DERIVED_CACHE.signature = signature;
+  CHAT_DERIVED_CACHE.value = best;
+  return best;
 }
 
 function isGenericDerivedTask(text) {
@@ -3144,6 +3194,7 @@ async function mountPanel() {
   let lastSignature = "";
   let lastFetchAt = 0;
   let lastArchiveFetchAt = 0;
+  let lastAgentsFetchAt = 0;
   let agentsResult = null;
   let sessionsResult = null;
   let orchestrationResult = null;
@@ -3155,6 +3206,8 @@ async function mountPanel() {
   let prevSessionKey = "";
   let prevRunId = "";
   let lastInteractiveAt = 0;
+  let tickInFlight = false;
+  let tickQueued = false;
   const eventsRendered = { current: false };
 
   const applySessionRollover = (snapshot, nowTs = Date.now()) => {
@@ -3294,6 +3347,12 @@ async function mountPanel() {
   };
 
   const tick = async () => {
+    if (tickInFlight) {
+      tickQueued = true;
+      return;
+    }
+    tickInFlight = true;
+    try {
     remountIntoIntegratedHost();
     if (!app?.connected) {
       panel.style.display = "none";
@@ -3438,7 +3497,11 @@ async function mountPanel() {
 
     if ((now - lastFetchAt) >= dataRefreshInterval) {
       lastFetchAt = now;
-      agentsResult = await fetchAgents(app);
+      const shouldRefreshAgents = !agentsResult || (now - lastAgentsFetchAt) >= 5 * 60 * 1000;
+      if (shouldRefreshAgents) {
+        agentsResult = await fetchAgents(app);
+        lastAgentsFetchAt = now;
+      }
       sessionsResult = await fetchSessions(app);
       const nextArchiveSnapshot = pickSessionSnapshot(sessionsResult, app.sessionKey);
       const sessionRolled = applySessionRollover(nextArchiveSnapshot, now);
@@ -3518,6 +3581,13 @@ async function mountPanel() {
     // ── Tranche 14: 更新暗桩台 + 运行状态条 ──────────────────────────────
     updateAnkuangtai(orchestrationResult);
     updateStatusBar(app, archiveRenderState);
+    } finally {
+      tickInFlight = false;
+      if (tickQueued) {
+        tickQueued = false;
+        void tick();
+      }
+    }
   };
 
   tick();
