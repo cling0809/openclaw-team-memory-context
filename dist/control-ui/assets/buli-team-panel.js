@@ -1510,6 +1510,7 @@ function normalizeChatDerivedStatus(text) {
 
 const CHAT_TEAM_SIGNAL_RE = /(sessions_spawn|sessions_yield|天罡|子代理|子会话|派工|分派|军令|分道齐进|并进|回呈|回传|超时|失联|折损|扫描|研究|评审|汇总)/;
 const CHAT_SEAT_RE = /(不良帅(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?|天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?)/g;
+const CHAT_OVERALL_DONE_RE = /(全部回传|悉数回传|均已回传|回传完毕|军情汇总完毕|汇总完毕|裁断结束|评审完毕|结案|全部完成|任务完成)/;
 
 function isTerminalChatStatus(status) {
   return ['done', 'failed', 'timed_out', 'aborted'].includes(normalizeRunStatus(status));
@@ -1634,12 +1635,16 @@ function deriveTeamStateFromMessageList(messages) {
   };
 
   let latestObjectiveLine = '';
+  let latestOverallDoneOrder = -1;
   lines.forEach((line, order) => {
     if (/(正在并进|分道齐进|等回传中|等待.*回传|搜索中|扫描中|研究中|执行中|行令中|正在拆解|正在分析)/.test(line)) {
       inferredActiveStatus = '行令中';
     }
     if (/(当前阶段|下一棒|当前策略|等待.*回传|汇总|对比|扫描|任务板|分道齐进|军令目标|目标)/.test(line)) {
       latestObjectiveLine = line;
+    }
+    if (CHAT_OVERALL_DONE_RE.test(line)) {
+      latestOverallDoneOrder = order;
     }
 
     const tableParts = line
@@ -1710,8 +1715,32 @@ function deriveTeamStateFromMessageList(messages) {
     if (objectiveLine) objective = compactText(objectiveLine.replace(/^[•\-]+/, '').trim(), 96);
   }
 
-  const children = Array.from(childrenByAgent.values())
+  const normalizedChildren = Array.from(childrenByAgent.values())
     .sort((a, b) => Number(b?._lineOrder || 0) - Number(a?._lineOrder || 0))
+    .map((child) => {
+      if (latestOverallDoneOrder >= 0) {
+        const status = normalizeRunStatus(child?.status || child?.runtimeStatus);
+        const isMainSeat = String(child?.agentId || child?.role || '').trim() === 'main';
+        const taskText = firstMeaningfulText(child?.taskSummary, child?.task, child?.summary);
+        if (isMainSeat && !String(child?.sessionKey || '').trim()) {
+          return null;
+        }
+        if (['live', 'queued', 'idle'].includes(status)) {
+          return {
+            ...child,
+            status: 'done',
+            runtimeStatus: 'done',
+            summary: child.summary || (isGenericDerivedTask(taskText) ? '本轮已回呈' : (taskText || '本轮已回呈')),
+            resultDigest: child.resultDigest || '',
+            error: '',
+          };
+        }
+      }
+      return child;
+    })
+    .filter(Boolean);
+
+  const children = normalizedChildren
     .map((child) => ({
       agentId: child.agentId,
       role: child.role,
@@ -1743,8 +1772,8 @@ function deriveTeamStateFromMessageList(messages) {
   return {
     objective: objective || '团队军令执行中',
     currentObjectiveDigest: objective || '团队军令执行中',
-    phase: liveChildren.length > 0 ? 'executing' : (queuedChildren.length > 0 ? 'planning' : 'verifying'),
-    currentWorker: liveChildren[0]?.agentId || 'main',
+    phase: liveChildren.length > 0 ? 'executing' : (queuedChildren.length > 0 ? 'planning' : ''),
+    currentWorker: liveChildren[0]?.agentId || null,
     children,
   };
 }
@@ -2321,10 +2350,10 @@ function renderTabArmy(panel, app, orchestrationResult) {
   const activity = ActivityTracker.getSnapshot();
   const liveChildren = (meta?.children || []).filter(child => getChildDisplayStatus(child) === 'live');
   const msgCount = Array.isArray(app?.chatMessages) ? app.chatMessages.length : 0;
-  const isRunning = !!(app?.chatRunId);
+  const isRunning = !!(app?.chatRunId || app?.chatSending || activity.isStreaming || liveChildren.length > 0);
   const leadLiveChild = liveChildren[0] || null;
   const leadLiveActivity = leadLiveChild ? getTrackedChildActivity(leadLiveChild) : null;
-  const anyActive = activity.isActive || isRunning || activity.isStreaming || liveChildren.length > 0;
+  const anyActive = isRunning;
   const toolDetail = activity.currentToolDesc || (leadLiveActivity?.lastTool ? `正在${ActivityTracker.getToolLabel(leadLiveActivity.lastTool)}` : (leadLiveChild ? getChildTaskText(leadLiveChild, 'live') : (activity.isStreaming ? '思考中…' : '')));
   const phaseLabel = PHASE_LABELS[meta?.phase || ''] || meta?.phase || '';
 
@@ -2350,16 +2379,6 @@ function renderTabArmy(panel, app, orchestrationResult) {
   h += `<div class="buli-army-hdr-meta">${statsParts.join(' · ')}</div>`;
   if (phaseLabel) {
     h += `<div class="buli-army-hdr-phase"><span class="bp-phase-badge">${escapeHtml(phaseLabel)}${meta?.iterationCount > 0 ? ' · 第' + meta.iterationCount + '轮' : ''}</span></div>`;
-  }
-  // DEBUG: show all children in army header
-  if (meta?.children?.length > 0) {
-    const childLines = (meta.children).map(c => {
-      const s = c.status || '—';
-      const n = c.agentId || c.role || '—';
-      const icon = s === 'live' ? '◉' : s === 'done' ? '✓' : s === 'failed' || s === 'timed_out' ? '✗' : '○';
-      return `${icon} ${n}`;
-    }).join(' | ');
-    h += `<div class="buli-army-hdr-phase" style="margin-top:4px;font-size:10px;opacity:0.8">${childLines}</div>`;
   }
   h += `</div></div>`; // hdr-main, hdr
 
@@ -3080,14 +3099,20 @@ async function mountPanel() {
         derivedHasTerminal ||
         (!String(s?.objective || s?.currentObjectiveDigest || '').trim() && String(chatDerived.objective || chatDerived.currentObjectiveDigest || '').trim());
       if (shouldHydrateFromChat) {
+        const nextChildren = mergeChatDerivedChildren(s?.children || [], chatDerived.children || []);
+        const nextLiveChildren = nextChildren.filter((child) => getChildDisplayStatus(child) === 'live');
+        const nextQueuedChildren = nextChildren.filter((child) => getChildDisplayStatus(child) === 'queued');
+        const nextCurrentWorker = nextLiveChildren[0]?.agentId || null;
+        const nextPhase = nextLiveChildren.length > 0 ? 'executing' : (nextQueuedChildren.length > 0 ? 'planning' : '');
         teamTaskStore.setState(prev => ({
           ...prev,
           sessionKey: app.sessionKey || prev.sessionKey || '',
-          objective: prev.objective || chatDerived.objective || '',
-          currentObjectiveDigest: prev.currentObjectiveDigest || chatDerived.currentObjectiveDigest || chatDerived.objective || '',
-          currentWorker: prev.currentWorker || chatDerived.currentWorker || null,
-          phase: prev.phase || chatDerived.phase || 'planning',
-          children: mergeChatDerivedChildren(prev.children || [], chatDerived.children || []),
+          objective: chatDerived.objective || prev.objective || '',
+          currentObjectiveDigest: chatDerived.currentObjectiveDigest || chatDerived.objective || prev.currentObjectiveDigest || '',
+          currentWorker: nextCurrentWorker,
+          nextWorker: nextQueuedChildren[0]?.agentId || null,
+          phase: nextPhase,
+          children: nextChildren,
           updatedAt: now,
         }));
       }

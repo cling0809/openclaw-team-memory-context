@@ -1,12 +1,18 @@
-const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260408a";
+const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409b";
 const COMPOSER_MODE_KEY = "openclaw:workbench:composer-mode:v1";
 const DEFAULT_MODE = "agent";
 const VALID_MODES = new Set(["agent", "team"]);
 const RESET_COMMAND_RE = /^\/(?:new|reset)\b/i;
+const TEAM_ENFORCEMENT_MARKER = "【TEAM_MODE_ENFORCEMENT】";
+const TEAM_ENFORCEMENT_GRACE_MS = 1400;
+const TEAM_DISPATCH_EVIDENCE_RE =
+  /(sessions_spawn|子代理|子会话|天罡|分身|派工|分派|军令|分道齐进|并进|协作席位|回呈|回传|评审完毕|汇总完毕|裁断结束)/i;
 
 const STATE = {
   mode: readStoredMode(),
   syncQueued: false,
+  enforcement: null,
+  enforcementSending: false,
 };
 
 function normalizeText(value) {
@@ -186,7 +192,7 @@ function syncModeControls() {
     }
     const hint = control.querySelector(".buli-composer-mode__hint");
     if (hint) {
-      hint.textContent = STATE.mode === "team" ? "团队派工" : "单兵直问";
+      hint.textContent = STATE.mode === "team" ? "强制派工" : "单兵直问";
     }
   }
   const composer = document.querySelector(".agent-chat__input");
@@ -195,13 +201,173 @@ function syncModeControls() {
   }
 }
 
+function getTeamStore() {
+  return window.__teamTaskStore;
+}
+
+function getTeamHelpers() {
+  return window.__teamTaskHelpers;
+}
+
+function clearTeamEnforcement() {
+  STATE.enforcement = null;
+  STATE.enforcementSending = false;
+}
+
+function markTeamEnforcementIssue(app, detail) {
+  const store = getTeamStore();
+  const helpers = getTeamHelpers();
+  const text = normalizeText(detail) || "团队模式违令 · 未实际派工";
+  if (typeof store?.setState === "function") {
+    store.setState((state) => {
+      const issues = Array.isArray(state?.issues) ? state.issues.slice() : [];
+      if (!issues.includes(text)) {
+        issues.unshift(text);
+      }
+      return {
+        ...state,
+        sessionKey: normalizeText(app?.sessionKey) || state.sessionKey || "main",
+        issues: issues.slice(0, 6),
+        updatedAt: Date.now(),
+      };
+    });
+  }
+  if (typeof helpers?.pushTimelineEvent === "function") {
+    helpers.pushTimelineEvent("task_progress", "system", text);
+  }
+}
+
+function collectRecentAssistantSurfaceText(limit = 12) {
+  if (typeof document === "undefined") {
+    return "";
+  }
+  const thread =
+    document.querySelector(".chat-main .chat-thread") || document.querySelector(".chat-thread");
+  if (!thread) {
+    return "";
+  }
+  return Array.from(thread.querySelectorAll(".chat-line"))
+    .filter((line) => !line.classList.contains("user"))
+    .slice(-limit)
+    .map((line) => {
+      const bubble = line.querySelector(".chat-bubble") || line;
+      return normalizeText(bubble?.innerText || bubble?.textContent || "");
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+function hasScopedTeamChildren(app) {
+  const store = getTeamStore();
+  const snapshot = typeof store?.getState === "function" ? store.getState() : null;
+  const currentSessionKey = normalizeText(app?.sessionKey);
+  if (!snapshot || !currentSessionKey) {
+    return false;
+  }
+  const snapshotSessionKey = normalizeText(snapshot?.sessionKey);
+  if (snapshotSessionKey && snapshotSessionKey !== currentSessionKey) {
+    return false;
+  }
+  const children = Array.isArray(snapshot?.children) ? snapshot.children : [];
+  return children.some((child) => {
+    const sessionKey = normalizeText(child?.sessionKey);
+    const parentKey = normalizeText(
+      child?.parentSessionKey ||
+        child?.controllerSessionKey ||
+        child?.requesterSessionKey ||
+        child?.ownerSessionKey ||
+        child?.sourceSessionKey,
+    );
+    const agentId = normalizeText(child?.agentId || child?.seatKey || child?.displayName);
+    if (agentId === "main") {
+      return false;
+    }
+    if (parentKey && parentKey === currentSessionKey) {
+      return true;
+    }
+    if (sessionKey && sessionKey !== currentSessionKey && sessionKey !== "main") {
+      return true;
+    }
+    return false;
+  });
+}
+
+function hasTeamDispatchEvidence(app) {
+  if (hasScopedTeamChildren(app)) {
+    return true;
+  }
+  return TEAM_DISPATCH_EVIDENCE_RE.test(collectRecentAssistantSurfaceText());
+}
+
+function buildTeamEnforcementMessage(originalMessage) {
+  const task = normalizeText(originalMessage);
+  return [
+    TEAM_ENFORCEMENT_MARKER,
+    "你当前处于 Agent Team 强制模式。",
+    "上一轮没有先实际派出任何子代理，已违反团队模式。",
+    "现在必须重新执行：先使用 sessions_spawn 派出至少 1 名子代理；复杂任务默认派出 2-3 名并明确分工。",
+    "在出现实际派工结果前，不得直接给出最终结论、总结或单兵完成答案。",
+    "",
+    "原始用户任务：",
+    task,
+  ].join("\n");
+}
+
+async function enforceTeamMode(app) {
+  const enforcement = STATE.enforcement;
+  if (!app || STATE.mode !== "team" || !enforcement) {
+    return;
+  }
+  const currentSessionKey = normalizeText(app?.sessionKey);
+  if (!currentSessionKey || currentSessionKey !== enforcement.sessionKey) {
+    clearTeamEnforcement();
+    return;
+  }
+  if (hasTeamDispatchEvidence(app)) {
+    clearTeamEnforcement();
+    return;
+  }
+  if (Array.isArray(app.chatQueue) && app.chatQueue.length > 0) {
+    return;
+  }
+  if (app.chatSending || app.chatRunId) {
+    return;
+  }
+  const now = Date.now();
+  const baselineTs = enforcement.correctedAt || enforcement.startedAt;
+  if (now - baselineTs < TEAM_ENFORCEMENT_GRACE_MS) {
+    return;
+  }
+  if (enforcement.correctedAt) {
+    markTeamEnforcementIssue(app, "团队模式违令 · 连续两轮未实际派工");
+    clearTeamEnforcement();
+    return;
+  }
+  const originalSend = app.__OPENCLAW_WORKBENCH_ORIGINAL_SEND__;
+  if (typeof originalSend !== "function" || STATE.enforcementSending) {
+    return;
+  }
+  STATE.enforcementSending = true;
+  STATE.enforcement = {
+    ...enforcement,
+    correctedAt: now,
+  };
+  applyTeamDispatch(app, enforcement.originalMessage);
+  markTeamEnforcementIssue(app, "团队模式纠偏 · 已强制要求先派工");
+  try {
+    await originalSend.call(app, buildTeamEnforcementMessage(enforcement.originalMessage));
+  } finally {
+    STATE.enforcementSending = false;
+  }
+}
+
 function applyTeamDispatch(app, message) {
   const text = normalizeText(message);
   if (!text || text.startsWith("/")) {
     return;
   }
-  const store = window.__teamTaskStore;
-  const helpers = window.__teamTaskHelpers;
+  const store = getTeamStore();
+  const helpers = getTeamHelpers();
   const snapshot = typeof store?.getState === "function" ? store.getState() : null;
   const children = Array.isArray(snapshot?.children) ? snapshot.children : [];
   const hasActiveChildren = children.some((child) => {
@@ -225,8 +391,9 @@ function applyTeamDispatch(app, message) {
 }
 
 function resetTeamDispatch(app, reason) {
-  const store = window.__teamTaskStore;
-  const helpers = window.__teamTaskHelpers;
+  const store = getTeamStore();
+  const helpers = getTeamHelpers();
+  clearTeamEnforcement();
   if (typeof store?.setState === "function") {
     store.setState((state) => ({
       ...state,
@@ -256,14 +423,27 @@ function patchSendPipeline(app) {
   if (typeof original !== "function") {
     return;
   }
+  app.__OPENCLAW_WORKBENCH_ORIGINAL_SEND__ = original;
   app.handleSendChat = async function patchedHandleSendChat(messageOverride, opts) {
     const outgoing =
       typeof messageOverride === "string" ? messageOverride : normalizeText(this.chatMessage);
+    const normalizedOutgoing = normalizeText(outgoing);
+    const isEnforcementMessage = normalizedOutgoing.startsWith(TEAM_ENFORCEMENT_MARKER);
     if (RESET_COMMAND_RE.test(outgoing)) {
       resetTeamDispatch(this, "新对话已开启 · 总谱归档完毕");
     }
     if (STATE.mode === "team") {
-      applyTeamDispatch(this, outgoing);
+      if (!isEnforcementMessage && normalizedOutgoing && !normalizedOutgoing.startsWith("/")) {
+        STATE.enforcement = {
+          sessionKey: normalizeText(this.sessionKey) || "main",
+          originalMessage: normalizedOutgoing,
+          startedAt: Date.now(),
+          correctedAt: 0,
+        };
+      }
+      applyTeamDispatch(this, isEnforcementMessage ? STATE.enforcement?.originalMessage || outgoing : outgoing);
+    } else {
+      clearTeamEnforcement();
     }
     return original.call(this, messageOverride, opts);
   };
@@ -280,6 +460,7 @@ function syncWorkbench() {
   patchSendPipeline(app);
   syncModeControls();
   syncDocumentTitle(app);
+  void enforceTeamMode(app);
 }
 
 function requestSync() {
@@ -297,6 +478,9 @@ function setMode(nextMode) {
   }
   STATE.mode = normalized;
   persistMode(normalized);
+  if (normalized !== "team") {
+    clearTeamEnforcement();
+  }
   requestSync();
 }
 
