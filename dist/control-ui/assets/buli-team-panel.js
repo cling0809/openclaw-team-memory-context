@@ -327,6 +327,26 @@ const ActivityTracker = {
   },
 };
 
+function hasTrackedLiveChildActivities(activitySnapshot) {
+  const childActivities = activitySnapshot?.childActivities;
+  if (!(childActivities instanceof Map)) return false;
+  for (const activity of childActivities.values()) {
+    const status = normalizeRunStatus(activity?.status || '');
+    if (status === 'live' || status === 'queued') {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasActiveTeamChildren(state) {
+  const children = Array.isArray(state?.children) ? state.children : [];
+  return children.some((child) => {
+    const status = getChildDisplayStatus(child);
+    return status === 'live' || status === 'queued';
+  });
+}
+
 // ── 渲染缓存（防 innerHTML 抖动）──────────────────────────────────────────
 // 比对 HTML 字符串，相同则跳过 innerHTML 赋值，杜绝 DOM 重建导致的闪烁/动画重启
 const _renderCache = {};
@@ -3134,6 +3154,7 @@ async function mountPanel() {
   let lastKnownSessionId = "";
   let prevSessionKey = "";
   let prevRunId = "";
+  let lastInteractiveAt = 0;
   const eventsRendered = { current: false };
 
   const applySessionRollover = (snapshot, nowTs = Date.now()) => {
@@ -3357,6 +3378,7 @@ async function mountPanel() {
 
     if (signature !== lastSignature) {
       const prev = lastSignature ? JSON.parse(lastSignature) : null;
+      lastInteractiveAt = now;
       if (prev?.sessionKey !== app.sessionKey) {
         lastKnownSessionId = "";
         if (app.sessionKey) {
@@ -3403,7 +3425,14 @@ async function mountPanel() {
     const activeTabId = activeTabBtn ? activeTabBtn.getAttribute("data-tab") : "army";
 
     const activitySnapshot = ActivityTracker.getSnapshot();
-    const dataRefreshInterval = (app.chatSending || app.chatRunId || activitySnapshot.isActive || activitySnapshot.isStreaming)
+    const storeState = teamTaskStore?.getState ? teamTaskStore.getState() : null;
+    const hasLiveChildActivity = hasTrackedLiveChildActivities(activitySnapshot);
+    const hasActiveChildren = hasActiveTeamChildren(storeState);
+    if (app.chatSending || app.chatRunId) {
+      lastInteractiveAt = now;
+    }
+    const recentlyInteractive = lastInteractiveAt > 0 && (now - lastInteractiveAt) < 30000;
+    const dataRefreshInterval = (app.chatSending || app.chatRunId || activitySnapshot.isActive || activitySnapshot.isStreaming || hasLiveChildActivity || hasActiveChildren || recentlyInteractive)
       ? 2000
       : 12000;
 
@@ -3494,6 +3523,19 @@ async function mountPanel() {
   tick();
   // Tranche 9: tick 维持 2s；活跃运行时的数据轮询提到近实时，空闲时降回 12s
   window.setInterval(tick, 2000);
+  const forceImmediateRefresh = () => {
+    lastFetchAt = 0;
+    lastArchiveFetchAt = 0;
+    void tick();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      forceImmediateRefresh();
+    }
+  }, { passive: true });
+  window.addEventListener('focus', forceImmediateRefresh, { passive: true });
+  window.addEventListener('pageshow', forceImmediateRefresh, { passive: true });
+  window.addEventListener('online', forceImmediateRefresh, { passive: true });
   // 独立每秒更新 elapsed 时间（不受 tab 节流影响）
   // 空闲时 getElapsed() 返回 null，用 lastSeenElapsed 兜底，保持显示上一个值
   let lastSeenElapsed = null;
