@@ -148,7 +148,7 @@ while (__storeAttempts < 3 && __teamStore === null) {
   __storeAttempts++;
 }
 if (__teamStore === null) {
-  console.warn('[buli-panel] window.__teamTaskStore still null after retries — proceeding with null store');
+  // store 可能晚于 panel 注入；这里保持静默，后续轮询会自动接管。
 }
 const __teamHelpers = window.__teamTaskHelpers ?? null;
 const teamTaskStore = __teamStore;
@@ -1131,18 +1131,12 @@ async function fetchAgents(app) {
 async function fetchSessions(app, options = {}) {
   if (!app?.client || !app.connected) return null;
   try {
-    const raw = await app.client.request("sessions.list", {
+    return await app.client.request("sessions.list", {
       includeGlobal: true,
       includeUnknown: false,
       limit: 100,
       ...options,
     });
-    if (raw && raw.sessions) {
-      const keys = raw.sessions.map(s => (s.key || '?').split(':').slice(0,3).join(':'));
-      const subagentKeys = raw.sessions.filter(s => /:subagent:/.test(s.key || '')).map(s => s.key + '[' + s.status + ']');
-      console.log('[panel] sessions.list total:', raw.sessions.length, '| subagents:', subagentKeys.length, subagentKeys, '| mainStatus:', raw.sessions[0]?.status);
-    }
-    return raw;
   } catch {
     return null;
   }
@@ -1411,7 +1405,7 @@ function runStatusLabel(status) {
   return BU_LIANG_STATUS[normalized] ?? '候令';
 }
 
-const UNKNOWN_PANEL_TEXTS = new Set(['任务描述未知', '—', 'unknown', 'null', 'undefined']);
+const UNKNOWN_PANEL_TEXTS = new Set(['任务描述未知', '—', 'unknown', 'null', 'undefined', 'text']);
 const SIGNAL_META = {
   task_started: { icon: '▶', kind: 'agent' },
   task_completed: { icon: '✓', kind: 'agent' },
@@ -1505,11 +1499,11 @@ function resolveAgentIdFromSeatLabel(label) {
 function normalizeChatDerivedStatus(text) {
   const value = String(text || '').trim();
   if (!value) return 'queued';
-  if (/(搜索中|执行中|行令中|研究中|扫描中|汇总中|处理中|进行中|待回传|等回传中)/.test(value)) return 'live';
-  if (/(已回呈|已完成|完成|回传|已返回|已结束)/.test(value)) return 'done';
+  if (/(折损|失败|出错|报错)/.test(value)) return 'failed';
   if (/(失联|超时)/.test(value)) return 'timed_out';
   if (/(撤令|中止|取消)/.test(value)) return 'aborted';
-  if (/(折损|失败|出错|报错)/.test(value)) return 'failed';
+  if (/(搜索中|执行中|行令中|研究中|扫描中|汇总中|处理中|进行中|待回传|等回传中)/.test(value)) return 'live';
+  if (/(已回呈|已完成|完成|回传|已返回|已结束)/.test(value)) return 'done';
   if (/(候令|待命|待起行|等待)/.test(value)) return 'queued';
   return 'queued';
 }
@@ -1615,6 +1609,10 @@ function deriveTeamStateFromMessageList(messages) {
       ));
     const mergedStatus = shouldTakeStatus ? nextStatus : (prevStatus || nextStatus);
     const mergedTask = task || prev?.taskSummary || prev?.task || '';
+    const derivedTerminalSummary = nextStatus === 'done' ? mergedTask : '';
+    const derivedTerminalError = ['failed', 'timed_out', 'aborted'].includes(nextStatus)
+      ? compactText(statusTextNorm || mergedTask || '', 160)
+      : '';
     childrenByAgent.set(key, {
       ...(prev || {}),
       agentId: agentId || seat,
@@ -1622,8 +1620,11 @@ function deriveTeamStateFromMessageList(messages) {
       sessionKey: prev?.sessionKey || '',
       status: mergedStatus,
       taskSummary: mergedTask,
-      summary: prev?.summary || (nextIsTerminal ? mergedTask : ''),
-      resultDigest: prev?.resultDigest || '',
+      summary: nextStatus === 'done'
+        ? (prev?.summary || derivedTerminalSummary)
+        : '',
+      resultDigest: nextStatus === 'done' ? (prev?.resultDigest || '') : '',
+      error: nextIsTerminal ? (derivedTerminalError || prev?.error || '') : '',
       runtimeStatus: mergedStatus,
       lastActivityAt: Date.now(),
       _derivedFromChat: true,
@@ -1807,7 +1808,18 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
       isGenericDerivedTask(existing.taskSummary) ||
       taskChanged
     );
-    const resetTerminalOutcome = freshRedispatch && taskChanged;
+    const incomingAt = Number(child?.lastActivityAt || 0);
+    const existingAt = Number(existing?.lastActivityAt || 0);
+    const incomingIsNewer = incomingAt >= existingAt;
+    const refreshOutcome = freshRedispatch || (
+      incomingStatus !== 'idle' && (
+        incomingIsNewer ||
+        (isTerminalChatStatus(incomingStatus) && !isTerminalChatStatus(existingStatus))
+      )
+    );
+    const clearPreviousOutcome = freshRedispatch || (
+      ['failed', 'timed_out', 'aborted'].includes(incomingStatus) && refreshOutcome
+    );
 
     merged[existingIndex] = {
       ...existing,
@@ -1816,9 +1828,21 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
       status: takeIncomingStatus ? (child.status || child.runtimeStatus || existing.status) : existing.status,
       runtimeStatus: takeIncomingStatus ? (child.runtimeStatus || child.status || existing.runtimeStatus) : (existing.runtimeStatus || existing.status),
       taskSummary: useIncomingTask ? child.taskSummary : (existing.taskSummary || child.taskSummary || ''),
-      summary: resetTerminalOutcome ? '' : (existing.summary || child.summary || ''),
-      resultDigest: resetTerminalOutcome ? '' : (existing.resultDigest || child.resultDigest || ''),
-      error: resetTerminalOutcome ? '' : (existing.error || child.error || ''),
+      summary: clearPreviousOutcome
+        ? (child.summary || '')
+        : refreshOutcome
+          ? (child.summary || existing.summary || '')
+          : (existing.summary || child.summary || ''),
+      resultDigest: clearPreviousOutcome
+        ? (child.resultDigest || '')
+        : refreshOutcome
+          ? (child.resultDigest || existing.resultDigest || '')
+          : (existing.resultDigest || child.resultDigest || ''),
+      error: freshRedispatch
+        ? ''
+        : refreshOutcome
+          ? (child.error || existing.error || '')
+          : (existing.error || child.error || ''),
       lastActivityAt: Math.max(
         Number(existing.lastActivityAt || 0),
         Number(child.lastActivityAt || 0),
@@ -1858,14 +1882,14 @@ function getChildTaskText(child, status = getChildDisplayStatus(child)) {
 }
 
 function getChildSummaryText(child, status = getChildDisplayStatus(child)) {
+  if (status === 'failed') return firstMeaningfulText(child?.error, child?.summary, child?.resultDigest, child?.taskSummary, child?.task) || '执令受阻';
+  if (status === 'timed_out') return firstMeaningfulText(child?.error, child?.summary, child?.resultDigest, child?.taskSummary, child?.task) || '执行超时';
+  if (status === 'aborted') return firstMeaningfulText(child?.error, child?.summary, child?.resultDigest, child?.taskSummary, child?.task) || '已撤令';
   const explicit = firstMeaningfulText(child?.summary, child?.resultDigest, child?.error, child?.taskSummary, child?.task);
   if (explicit) return explicit;
   if (status === 'done') return '会议已结束，无明确回传';
   if (status === 'live') return '执行中，待回传';
   if (status === 'queued') return '已接令，待起行';
-  if (status === 'failed') return '执令受阻';
-  if (status === 'timed_out') return '执行超时';
-  if (status === 'aborted') return '已撤令';
   return '暂无动态';
 }
 
@@ -2170,15 +2194,6 @@ function enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, pa
     rememberIndexes(merged[existingIndex], existingIndex);
   });
 
-  console.log(
-    '[panel] merged orchestration children with sessions.list',
-    'existing=',
-    existingChildren.length,
-    'discovered=',
-    discovered.length,
-    'merged=',
-    merged.length,
-  );
   return {
     ...base,
     ts: base.ts || Date.now(),
@@ -3184,7 +3199,6 @@ async function mountPanel() {
             activeChildSessionKeys: (sessionRolled || blankFreshSession) ? [] : collectActiveChildSessionKeys(orchestrationResult),
           });
         } catch(e) { /* store 未初始化，静默跳过 */ }
-        console.log('[panel] after syncFromSessions => teamTaskStore.children.length:', teamTaskStore?.getState()?.children?.length);
       }
       // ── 从 sessions 数据更新子 agent 活动缓存 ──
       if (sessionsResult) {
@@ -3275,14 +3289,6 @@ function bootstrap() {
   };
   attempt();
 }
-
-console.log(
-  '[buli-panel] version: tranche16-20260404i |',
-  'DOM check: buli-tab=',
-  document.querySelectorAll('.buli-tab').length,
-  '| buli-ankuangtai='+document.querySelectorAll('.buli-ankuangtai').length,
-  '| buli-status-bar='+document.querySelectorAll('.buli-status-bar').length
-);
 
 // ─── Panel API for Companion Sprite ───────────────────────────────
 window.__openBuliTeamPanel = function() {

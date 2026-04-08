@@ -738,11 +738,11 @@ function pickSessionText(...values) {
 /** 标准化 runtime status 字符串 */
 function normalizeStatus(raw) {
   const s = String(raw || '').toLowerCase();
-  if (s.includes('running')) return 'running';
-  if (s.includes('done') || s.includes('complete')) return 'done';
-  if (s.includes('fail')) return 'failed';
+  if (/(running|live|working|stream|started|active)/.test(s)) return 'running';
+  if (/(done|complete|completed|finished|ok|success|succeeded|synced)/.test(s)) return 'done';
+  if (/(fail|error)/.test(s)) return 'failed';
   if (s.includes('timeout') || s.includes('timed_out')) return 'timed_out';
-  if (s.includes('abort')) return 'aborted';
+  if (/(abort|cancelled|canceled)/.test(s)) return 'aborted';
   return 'queued';
 }
 
@@ -751,7 +751,7 @@ function isTerminalChildStatus(status) {
 }
 
 const CHILD_SESSION_RE = /:subagent:/i;
-const UNKNOWN_TASK_LABELS = new Set(['任务描述未知', 'unknown', '—']);
+const UNKNOWN_TASK_LABELS = new Set(['任务描述未知', 'unknown', '—', 'text']);
 
 function isSubagentSession(sess) {
   const key = String(sess?.key || '');
@@ -989,20 +989,10 @@ function syncFromSessions(sessionsInput, options = {}) {
     };
     const childSessions = scopedChildSessionKeys.size > 0
       ? allChildSessions.filter(sess => scopedChildSessionKeys.has(String(sess?.key || '')))
-      : requestedSessionKey
+      : resolvedSessionKey
         ? allChildSessions.filter(childBelongsToActiveSession)
-        : (sessionReset ? [] : allChildSessions);
+        : [];
     const sameTopSession = !!resolvedSessionKey && !!topSessionKey && resolvedSessionKey === topSessionKey;
-    console.log(
-      '[teamTaskStore] sessions received:',
-      sessions.length,
-      'total,',
-      childSessions.length,
-      'scoped subagents, active session:',
-      resolvedSessionKey || '(none)',
-      'keys:',
-      sessions.map(s => s.key),
-    );
 
     // ── [Tranche 14 fix] 新会话切换时重置 children 和 timeline ─────────────
     const prevSessionKey = s.sessionKey;
@@ -1208,10 +1198,14 @@ function syncFromSessions(sessionsInput, options = {}) {
       return [{
         ...child,
         status: terminalStatus,
-        summary: summaryText || child.summary || '',
-        resultDigest: summaryText ? (child.resultDigest || summarize(summaryText)) : child.resultDigest,
+        summary: terminalStatus === 'done' ? (summaryText || child.summary || '') : '',
+        resultDigest: terminalStatus === 'done'
+          ? (summaryText ? (child.resultDigest || summarize(summaryText)) : child.resultDigest)
+          : '',
         error: terminalStatus === 'timed_out'
           ? (child.error || '执行超时')
+          : terminalStatus === 'failed'
+            ? (child.error || '执令受阻')
           : child.error,
         lastActivityAt: now,
         _missingRounds: missingRounds,
