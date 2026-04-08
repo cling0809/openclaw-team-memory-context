@@ -180,17 +180,17 @@ pnpm public:dashboard
 
 ## Showcase
 
-### 暗色主题总谱工作台
+### 暗色主题 · 天罡并进总谱
 
-![不良人公开版暗色主题工作台](docs/assets/showcase/openclaw-home-dark.png)
+![不良人公开版暗色主题天罡并进总谱](docs/assets/showcase/buliangren-team-dark.jpg)
 
-### 浅色主题总谱工作台
+### 浅色主题 · 纸卷工作台
 
-![不良人公开版浅色主题工作台](docs/assets/showcase/openclaw-home-light.png)
+![不良人公开版浅色主题纸卷工作台](docs/assets/showcase/buliangren-team-light.jpg)
 
-### 团队裁断与军令回呈
+### 暗色主题 · 裁断与军情回呈
 
-![不良人公开版团队裁断与军令回呈](docs/assets/showcase/openclaw-analysis-report.png)
+![不良人公开版裁断与军情回呈](docs/assets/showcase/buliangren-judgement-dark.jpg)
 
 ## 仓库结构
 
