@@ -1,4 +1,4 @@
-const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409b";
+const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409c";
 const COMPOSER_MODE_KEY = "openclaw:workbench:composer-mode:v1";
 const DEFAULT_MODE = "agent";
 const VALID_MODES = new Set(["agent", "team"]);
@@ -214,6 +214,59 @@ function clearTeamEnforcement() {
   STATE.enforcementSending = false;
 }
 
+function buildSessionAliasSet(...values) {
+  const aliases = new Set();
+  const add = (value) => {
+    const text = normalizeText(value).toLowerCase();
+    if (!text || aliases.has(text)) {
+      return;
+    }
+    aliases.add(text);
+
+    if (text === "main" || text === "agent:main:main" || text === "webchat:g-agent-main-main") {
+      aliases.add("main");
+      aliases.add("agent:main:main");
+      aliases.add("webchat:g-agent-main-main");
+      return;
+    }
+
+    const webchatDashboardMatch = text.match(/^webchat:g-agent-main-dashboard-(.+)$/i);
+    if (webchatDashboardMatch) {
+      const suffix = webchatDashboardMatch[1];
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      return;
+    }
+
+    if (text.startsWith("dashboard:")) {
+      const suffix = text.slice("dashboard:".length);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+      return;
+    }
+
+    if (text.startsWith("main:dashboard:")) {
+      const suffix = text.slice("main:dashboard:".length);
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+      return;
+    }
+
+    if (text.startsWith("agent:main:dashboard:")) {
+      const suffix = text.slice("agent:main:dashboard:".length);
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+    }
+  };
+
+  values.flat().forEach(add);
+  return aliases;
+}
+
 function markTeamEnforcementIssue(app, detail) {
   const store = getTeamStore();
   const helpers = getTeamHelpers();
@@ -264,14 +317,27 @@ function hasScopedTeamChildren(app) {
   if (!snapshot || !currentSessionKey) {
     return false;
   }
-  const snapshotSessionKey = normalizeText(snapshot?.sessionKey);
-  if (snapshotSessionKey && snapshotSessionKey !== currentSessionKey) {
+  const activeSessionAliases = buildSessionAliasSet(currentSessionKey);
+  const snapshotSessionAliases = buildSessionAliasSet(snapshot?.sessionKey);
+  if (snapshotSessionAliases.size > 0) {
+    let snapshotMatches = false;
+    for (const alias of snapshotSessionAliases) {
+      if (activeSessionAliases.has(alias)) {
+        snapshotMatches = true;
+        break;
+      }
+    }
+    if (!snapshotMatches) {
+      return false;
+    }
+  }
+  if (activeSessionAliases.size === 0) {
     return false;
   }
   const children = Array.isArray(snapshot?.children) ? snapshot.children : [];
   return children.some((child) => {
     const sessionKey = normalizeText(child?.sessionKey);
-    const parentKey = normalizeText(
+    const parentAliases = buildSessionAliasSet(
       child?.parentSessionKey ||
         child?.controllerSessionKey ||
         child?.requesterSessionKey ||
@@ -282,8 +348,10 @@ function hasScopedTeamChildren(app) {
     if (agentId === "main") {
       return false;
     }
-    if (parentKey && parentKey === currentSessionKey) {
-      return true;
+    for (const alias of parentAliases) {
+      if (activeSessionAliases.has(alias)) {
+        return true;
+      }
     }
     if (sessionKey && sessionKey !== currentSessionKey && sessionKey !== "main") {
       return true;

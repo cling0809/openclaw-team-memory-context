@@ -1304,6 +1304,191 @@ function pickSessionSnapshot(sessionsResult, sessionKey) {
   };
 }
 
+function buildSessionAliasSet(...values) {
+  const aliases = new Set();
+  const add = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return;
+    const lower = text.toLowerCase();
+    if (aliases.has(lower)) return;
+    aliases.add(lower);
+
+    if (lower === 'main' || lower === 'agent:main:main' || lower === 'webchat:g-agent-main-main') {
+      aliases.add('main');
+      aliases.add('agent:main:main');
+      aliases.add('webchat:g-agent-main-main');
+      return;
+    }
+
+    const webchatDashboardMatch = lower.match(/^webchat:g-agent-main-dashboard-(.+)$/i);
+    if (webchatDashboardMatch) {
+      const suffix = webchatDashboardMatch[1];
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      return;
+    }
+
+    if (lower.startsWith('dashboard:')) {
+      const suffix = lower.slice('dashboard:'.length);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+      return;
+    }
+
+    if (lower.startsWith('main:dashboard:')) {
+      const suffix = lower.slice('main:dashboard:'.length);
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+      return;
+    }
+
+    if (lower.startsWith('agent:main:dashboard:')) {
+      const suffix = lower.slice('agent:main:dashboard:'.length);
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+    }
+  };
+
+  values.flat().forEach(add);
+  return aliases;
+}
+
+function isMainSessionAliasSet(aliases) {
+  return aliases.has('main') || aliases.has('agent:main:main') || aliases.has('webchat:g-agent-main-main');
+}
+
+function isDashboardSessionAlias(alias) {
+  const value = String(alias || '').trim().toLowerCase();
+  return (
+    value.startsWith('dashboard:') ||
+    value.startsWith('main:dashboard:') ||
+    value.startsWith('agent:main:dashboard:') ||
+    /^webchat:g-agent-main-dashboard-/.test(value)
+  );
+}
+
+function getSessionChannelKey(sess) {
+  return String(sess?.channel || sess?.origin?.provider || sess?.origin?.surface || '').trim().toLowerCase();
+}
+
+function getSessionUpdatedAt(sess) {
+  const values = [sess?.updatedAt, sess?.updated, sess?.lastActivityAt, sess?.endedAt, sess?.startedAt, sess?.createdAt];
+  for (const value of values) {
+    const num = Number(value || 0);
+    if (Number.isFinite(num) && num > 0) return num;
+  }
+  return 0;
+}
+
+function isSubagentSessionRecord(sess) {
+  const key = String(sess?.key || '');
+  const kind = String(sess?.kind || sess?.type || '').toLowerCase();
+  const role = String(sess?.role || '').toLowerCase();
+  return /:subagent:/i.test(key) || kind === 'subagent' || role === 'subagent';
+}
+
+function findRelatedDashboardSession(sessionsInput, activeSessionKey) {
+  const activeAliases = buildSessionAliasSet(activeSessionKey);
+  if (activeAliases.size === 0 || !isMainSessionAliasSet(activeAliases)) {
+    return null;
+  }
+
+  const sessions = Array.isArray(sessionsInput?.sessions)
+    ? sessionsInput.sessions
+    : Array.isArray(sessionsInput) ? sessionsInput : [];
+  const parentSessions = sessions.filter((sess) => !isSubagentSessionRecord(sess));
+  const activeParent = parentSessions.find((sess) => {
+    const aliases = buildSessionAliasSet(sess?.key, sess?.displayName, sess?.label);
+    for (const alias of aliases) {
+      if (activeAliases.has(alias)) return true;
+    }
+    return false;
+  }) || null;
+  const activeChannel = getSessionChannelKey(activeParent);
+  const recentWindowMs = 30 * 60 * 1000;
+  const now = Date.now();
+
+  const candidates = parentSessions.filter((sess) => {
+    const aliases = buildSessionAliasSet(sess?.key, sess?.displayName, sess?.label);
+    let dashboard = false;
+    for (const alias of aliases) {
+      if (isDashboardSessionAlias(alias)) {
+        dashboard = true;
+        break;
+      }
+    }
+    if (!dashboard) return false;
+
+    const childCount = Array.isArray(sess?.childSessions) ? sess.childSessions.filter(Boolean).length : 0;
+    const status = normalizeRunStatus(sess?.status);
+    const updatedAt = getSessionUpdatedAt(sess);
+    const sameChannel = !activeChannel || getSessionChannelKey(sess) === activeChannel;
+    const recentEnough = updatedAt > 0 && (now - updatedAt) <= recentWindowMs;
+    return sameChannel && (childCount > 0 || status === 'live' || status === 'queued' || recentEnough);
+  });
+
+  candidates.sort((a, b) => {
+    const statusA = normalizeRunStatus(a?.status);
+    const statusB = normalizeRunStatus(b?.status);
+    const weightA = statusA === 'live' ? 3 : statusA === 'queued' ? 2 : 1;
+    const weightB = statusB === 'live' ? 3 : statusB === 'queued' ? 2 : 1;
+    if (weightA !== weightB) return weightB - weightA;
+    const childCountA = Array.isArray(a?.childSessions) ? a.childSessions.filter(Boolean).length : 0;
+    const childCountB = Array.isArray(b?.childSessions) ? b.childSessions.filter(Boolean).length : 0;
+    if (childCountA !== childCountB) return childCountB - childCountA;
+    return getSessionUpdatedAt(b) - getSessionUpdatedAt(a);
+  });
+
+  return candidates[0] || null;
+}
+
+function buildScopedSessionAliasSet(sessionsInput, activeSessionKey) {
+  const sessions = Array.isArray(sessionsInput?.sessions)
+    ? sessionsInput.sessions
+    : Array.isArray(sessionsInput) ? sessionsInput : [];
+  const aliases = buildSessionAliasSet(activeSessionKey);
+  const relatedDashboard = findRelatedDashboardSession(sessions, activeSessionKey);
+  if (relatedDashboard) {
+    buildSessionAliasSet(
+      relatedDashboard?.key,
+      relatedDashboard?.displayName,
+      relatedDashboard?.label,
+    ).forEach((alias) => aliases.add(alias));
+  }
+  return aliases;
+}
+
+function collectScopedChildSessionKeys(sessionsInput, activeSessionKey) {
+  const sessions = Array.isArray(sessionsInput?.sessions)
+    ? sessionsInput.sessions
+    : Array.isArray(sessionsInput) ? sessionsInput : [];
+  const activeAliases = buildScopedSessionAliasSet(sessions, activeSessionKey);
+  if (activeAliases.size === 0) return [];
+  const keys = new Set();
+  sessions.forEach((sess) => {
+    const childSessions = Array.isArray(sess?.childSessions) ? sess.childSessions : [];
+    if (childSessions.length === 0) return;
+    const parentAliases = buildSessionAliasSet(sess?.key, sess?.displayName, sess?.label);
+    let match = false;
+    for (const alias of parentAliases) {
+      if (activeAliases.has(alias)) {
+        match = true;
+        break;
+      }
+    }
+    if (!match) return;
+    childSessions.forEach((key) => {
+      const text = String(key || '').trim();
+      if (text) keys.add(text);
+    });
+  });
+  return [...keys];
+}
+
 function getArchivePressure(snapshot, fallbackPressure = 0) {
   const totalTokens = toFiniteNumber(snapshot?.totalTokens);
   const contextTokens = toFiniteNumber(snapshot?.contextTokens);
@@ -1379,10 +1564,10 @@ function getArchiveCompactionMeta(compactionStatus, isLoading) {
   return null;
 }
 
-async function fetchTeamOrchestration(app) {
-  if (!app?.client || !app.connected || !app?.sessionKey) return null;
+async function fetchTeamOrchestration(app, sessionKey = app?.sessionKey) {
+  if (!app?.client || !app.connected || !sessionKey) return null;
   try {
-    return await app.client.request("sessions.team_orchestration", { sessionKey: app.sessionKey });
+    return await app.client.request("sessions.team_orchestration", { sessionKey });
   } catch {
     return null;
   }
@@ -2113,9 +2298,12 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
   const sessions = Array.isArray(sessionsResult?.sessions)
     ? sessionsResult.sessions
     : Array.isArray(sessionsResult) ? sessionsResult : [];
+  const activeSessionAliases = buildScopedSessionAliasSet(sessions, parentSessionKey);
+  const relatedChildSessionKeys = new Set(collectScopedChildSessionKeys(sessions, parentSessionKey));
   return sessions.filter(sess => {
     if (!sess?.key || !/:subagent:/.test(sess.key)) return false;
-    const parentCandidates = [
+    if (relatedChildSessionKeys.has(String(sess.key || '').trim())) return true;
+    const parentCandidates = buildSessionAliasSet([
       sess.spawnedBy,
       sess.parentSessionKey,
       sess.controllerSessionKey,
@@ -2124,10 +2312,16 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
       sess.orchestratorSessionKey,
       sess.ownerSessionKey,
       sess.sourceSessionKey,
-    ]
-      .map(value => String(value || '').trim())
-      .filter(Boolean);
-    return parentCandidates.includes(parentSessionKey);
+    ]);
+    if (activeSessionAliases.size === 0 || parentCandidates.size === 0) {
+      return false;
+    }
+    for (const candidate of parentCandidates) {
+      if (activeSessionAliases.has(candidate)) {
+        return true;
+      }
+    }
+    return false;
   }).map(sess => {
     const keyStr = String(sess.key || '');
     const agentMatch = keyStr.match(/^agent:([^:]+):subagent:/i);
@@ -2979,13 +3173,20 @@ async function mountPanel() {
         const sessionRolled = applySessionRollover(nextArchiveSnapshot);
         // 补充 orchestration（如果 orchestration 文件不存在）
         if (!sessionRolled) {
-          orchestrationResult = enrichOrchestrationFromSessions(orchestrationResult, result, app.sessionKey);
+          const scopedOrchestrationSessionKey = findRelatedDashboardSession(result, app.sessionKey)?.key || app.sessionKey;
+          if (!orchestrationResult && scopedOrchestrationSessionKey && scopedOrchestrationSessionKey !== app.sessionKey) {
+            orchestrationResult = await fetchTeamOrchestration(app, scopedOrchestrationSessionKey);
+          }
+          orchestrationResult = enrichOrchestrationFromSessions(orchestrationResult, result, scopedOrchestrationSessionKey);
         }
         if (syncFromSessions) {
           try {
+            const scopedChildSessionKeys = collectScopedChildSessionKeys(result, app.sessionKey);
             syncFromSessions(result, {
               activeSessionKey: app.sessionKey,
-              activeChildSessionKeys: sessionRolled ? [] : collectActiveChildSessionKeys(orchestrationResult),
+              activeChildSessionKeys: sessionRolled
+                ? []
+                : [...new Set([...collectActiveChildSessionKeys(orchestrationResult), ...scopedChildSessionKeys])],
             });
           } catch(e) { /* 静默 */ }
         }
@@ -3212,16 +3413,22 @@ async function mountPanel() {
       sessionsResult = await fetchSessions(app);
       const nextArchiveSnapshot = pickSessionSnapshot(sessionsResult, app.sessionKey);
       const sessionRolled = applySessionRollover(nextArchiveSnapshot, now);
-      orchestrationResult = (sessionRolled || blankFreshSession) ? null : await fetchTeamOrchestration(app);
+      const scopedOrchestrationSessionKey = findRelatedDashboardSession(sessionsResult, app.sessionKey)?.key || app.sessionKey;
+      orchestrationResult = (sessionRolled || blankFreshSession)
+        ? null
+        : await fetchTeamOrchestration(app, scopedOrchestrationSessionKey);
       // 当 orchestration 文件缺失时，从 sessions.list 的 spawnedBy 字段发现子 agent
       orchestrationResult = blankFreshSession
         ? null
-        : enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, app.sessionKey);
+        : enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, scopedOrchestrationSessionKey);
       if (sessionsResult && syncFromSessions) {
         try {
+          const scopedChildSessionKeys = collectScopedChildSessionKeys(sessionsResult, app.sessionKey);
           syncFromSessions(sessionsResult, {
             activeSessionKey: app.sessionKey,
-            activeChildSessionKeys: (sessionRolled || blankFreshSession) ? [] : collectActiveChildSessionKeys(orchestrationResult),
+            activeChildSessionKeys: (sessionRolled || blankFreshSession)
+              ? []
+              : [...new Set([...collectActiveChildSessionKeys(orchestrationResult), ...scopedChildSessionKeys])],
           });
         } catch(e) { /* store 未初始化，静默跳过 */ }
       }

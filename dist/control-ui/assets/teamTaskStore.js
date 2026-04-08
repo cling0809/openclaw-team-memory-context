@@ -735,6 +735,175 @@ function pickSessionText(...values) {
   return '';
 }
 
+function buildSessionAliasSet(...values) {
+  const aliases = new Set();
+  const add = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return;
+    const lower = text.toLowerCase();
+    if (aliases.has(lower)) return;
+    aliases.add(lower);
+
+    if (lower === 'main' || lower === 'agent:main:main' || lower === 'webchat:g-agent-main-main') {
+      aliases.add('main');
+      aliases.add('agent:main:main');
+      aliases.add('webchat:g-agent-main-main');
+      return;
+    }
+
+    const webchatDashboardMatch = lower.match(/^webchat:g-agent-main-dashboard-(.+)$/i);
+    if (webchatDashboardMatch) {
+      const suffix = webchatDashboardMatch[1];
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      return;
+    }
+
+    if (lower.startsWith('dashboard:')) {
+      const suffix = lower.slice('dashboard:'.length);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+      return;
+    }
+
+    if (lower.startsWith('main:dashboard:')) {
+      const suffix = lower.slice('main:dashboard:'.length);
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`agent:main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+      return;
+    }
+
+    if (lower.startsWith('agent:main:dashboard:')) {
+      const suffix = lower.slice('agent:main:dashboard:'.length);
+      aliases.add(`dashboard:${suffix}`);
+      aliases.add(`main:dashboard:${suffix}`);
+      aliases.add(`webchat:g-agent-main-dashboard-${suffix}`);
+    }
+  };
+
+  values.flat().forEach(add);
+  return aliases;
+}
+
+function isMainSessionAliasSet(aliases) {
+  return aliases.has('main') || aliases.has('agent:main:main') || aliases.has('webchat:g-agent-main-main');
+}
+
+function isDashboardSessionAlias(alias) {
+  const value = String(alias || '').trim().toLowerCase();
+  return (
+    value.startsWith('dashboard:') ||
+    value.startsWith('main:dashboard:') ||
+    value.startsWith('agent:main:dashboard:') ||
+    /^webchat:g-agent-main-dashboard-/.test(value)
+  );
+}
+
+function getSessionChannelKey(sess) {
+  return normalizeSessionText(sess?.channel || sess?.origin?.provider || sess?.origin?.surface || '').toLowerCase();
+}
+
+function getSessionUpdatedAt(sess) {
+  const values = [sess?.updatedAt, sess?.updated, sess?.lastActivityAt, sess?.endedAt, sess?.startedAt, sess?.createdAt];
+  for (const value of values) {
+    const num = Number(value || 0);
+    if (Number.isFinite(num) && num > 0) return num;
+  }
+  return 0;
+}
+
+function findRelatedDashboardSession(sessions, activeSessionKey) {
+  const activeAliases = buildSessionAliasSet(activeSessionKey);
+  if (activeAliases.size === 0 || !isMainSessionAliasSet(activeAliases)) {
+    return null;
+  }
+
+  const parentSessions = sessions.filter((sess) => !isSubagentSession(sess));
+  const activeParent = parentSessions.find((sess) => {
+    const aliases = buildSessionAliasSet(sess?.key, sess?.displayName, sess?.label);
+    for (const alias of aliases) {
+      if (activeAliases.has(alias)) return true;
+    }
+    return false;
+  }) || null;
+  const activeChannel = getSessionChannelKey(activeParent);
+  const recentWindowMs = 30 * 60 * 1000;
+  const now = Date.now();
+
+  const candidates = parentSessions.filter((sess) => {
+    const aliases = buildSessionAliasSet(sess?.key, sess?.displayName, sess?.label);
+    let dashboard = false;
+    for (const alias of aliases) {
+      if (isDashboardSessionAlias(alias)) {
+        dashboard = true;
+        break;
+      }
+    }
+    if (!dashboard) return false;
+
+    const childCount = Array.isArray(sess?.childSessions) ? sess.childSessions.filter(Boolean).length : 0;
+    const status = normalizeStatus(sess?.status);
+    const updatedAt = getSessionUpdatedAt(sess);
+    const sameChannel = !activeChannel || getSessionChannelKey(sess) === activeChannel;
+    const recentEnough = updatedAt > 0 && (now - updatedAt) <= recentWindowMs;
+    return sameChannel && (childCount > 0 || status === 'running' || status === 'queued' || recentEnough);
+  });
+
+  candidates.sort((a, b) => {
+    const statusA = normalizeStatus(a?.status);
+    const statusB = normalizeStatus(b?.status);
+    const weightA = statusA === 'running' ? 3 : statusA === 'queued' ? 2 : 1;
+    const weightB = statusB === 'running' ? 3 : statusB === 'queued' ? 2 : 1;
+    if (weightA !== weightB) return weightB - weightA;
+    const childCountA = Array.isArray(a?.childSessions) ? a.childSessions.filter(Boolean).length : 0;
+    const childCountB = Array.isArray(b?.childSessions) ? b.childSessions.filter(Boolean).length : 0;
+    if (childCountA !== childCountB) return childCountB - childCountA;
+    return getSessionUpdatedAt(b) - getSessionUpdatedAt(a);
+  });
+
+  return candidates[0] || null;
+}
+
+function buildScopedSessionAliasSet(sessions, activeSessionKey) {
+  const aliases = buildSessionAliasSet(activeSessionKey);
+  const relatedDashboard = findRelatedDashboardSession(sessions, activeSessionKey);
+  if (relatedDashboard) {
+    buildSessionAliasSet(
+      relatedDashboard?.key,
+      relatedDashboard?.displayName,
+      relatedDashboard?.label,
+    ).forEach((alias) => aliases.add(alias));
+  }
+  return aliases;
+}
+
+function collectScopedChildSessionKeys(sessions, activeSessionKey) {
+  const aliases = buildScopedSessionAliasSet(sessions, activeSessionKey);
+  if (aliases.size === 0) return [];
+  const keys = new Set();
+  sessions.forEach((sess) => {
+    const childSessions = Array.isArray(sess?.childSessions) ? sess.childSessions : [];
+    if (childSessions.length === 0) return;
+    const parentAliases = buildSessionAliasSet(sess?.key, sess?.displayName, sess?.label);
+    let match = false;
+    for (const alias of parentAliases) {
+      if (aliases.has(alias)) {
+        match = true;
+        break;
+      }
+    }
+    if (!match) return;
+    childSessions.forEach((key) => {
+      const text = normalizeSessionText(key);
+      if (text) keys.add(text);
+    });
+  });
+  return [...keys];
+}
+
 /** 标准化 runtime status 字符串 */
 function normalizeStatus(raw) {
   const s = String(raw || '').toLowerCase();
@@ -971,9 +1140,15 @@ function syncFromSessions(sessionsInput, options = {}) {
     const persistedChildSessionKeys = sessionReset
       ? []
       : (baseState.children || []).map((child) => String(child?.sessionKey || '').trim()).filter(Boolean);
-    const scopedChildSessionKeys = new Set([...requestedChildSessionKeys, ...persistedChildSessionKeys]);
+    const relatedChildSessionKeys = collectScopedChildSessionKeys(sessions, resolvedSessionKey);
+    const scopedChildSessionKeys = new Set([
+      ...requestedChildSessionKeys,
+      ...persistedChildSessionKeys,
+      ...relatedChildSessionKeys,
+    ]);
+    const activeSessionAliases = buildScopedSessionAliasSet(sessions, resolvedSessionKey);
     const childBelongsToActiveSession = (sess) => {
-      const parentCandidates = [
+      const parentCandidates = buildSessionAliasSet([
         sess?.spawnedBy,
         sess?.parentSessionKey,
         sess?.controllerSessionKey,
@@ -982,10 +1157,16 @@ function syncFromSessions(sessionsInput, options = {}) {
         sess?.orchestratorSessionKey,
         sess?.ownerSessionKey,
         sess?.sourceSessionKey,
-      ]
-        .map((value) => String(value || '').trim())
-        .filter(Boolean);
-      return resolvedSessionKey ? parentCandidates.includes(resolvedSessionKey) : false;
+      ]);
+      if (!resolvedSessionKey || activeSessionAliases.size === 0 || parentCandidates.size === 0) {
+        return false;
+      }
+      for (const candidate of parentCandidates) {
+        if (activeSessionAliases.has(candidate)) {
+          return true;
+        }
+      }
+      return false;
     };
     const childSessions = scopedChildSessionKeys.size > 0
       ? allChildSessions.filter(sess => scopedChildSessionKeys.has(String(sess?.key || '')))
