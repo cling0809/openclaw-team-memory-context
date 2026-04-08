@@ -3728,3 +3728,1201 @@ body.lpt-workbench {
 	animation: bp-seat-glow 2.5s ease-in-out infinite;
 	border-left: 2px solid rgba(74, 222, 128, 0.4);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   §T15  聊天布局收束 + 会话检索器
+   ───────────────────────────────────────────────────────────────────────── */
+
+body.lpt-workbench > #buli-team-panel {
+	width: min(344px, 30vw) !important;
+}
+
+.shell {
+	grid-template-columns: clamp(220px, 18vw, 252px) minmax(0, 1fr) 344px !important;
+}
+
+aside.right-console,
+.right-console,
+#buli-team-panel.buli-integrated-host {
+	width: 344px !important;
+	min-width: 344px !important;
+}
+
+.content.content--chat {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 12px 22px 0 !important;
+}
+
+.content.content--chat::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: min(42vh, 360px);
+	background:
+		radial-gradient(circle at 58% 14%, rgba(201,168,76,0.08), transparent 32%),
+		radial-gradient(circle at 52% 36%, rgba(123,167,255,0.06), transparent 28%);
+	pointer-events: none;
+}
+
+.content.content--chat > .content-header,
+.content.content--chat > .card.chat {
+	position: relative;
+	width: min(100%, 1060px);
+	margin-inline: auto;
+}
+
+.content.content--chat > .content-header {
+	z-index: 3;
+	display: grid !important;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: start;
+	gap: 14px 16px;
+	padding: 8px 2px 14px;
+	border-bottom: 1px solid rgba(201,168,76,0.12);
+}
+
+.content.content--chat > .content-header > div:first-child,
+.content.content--chat .page-meta {
+	min-width: 0;
+}
+
+.content.content--chat .page-meta {
+	display: flex;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.content.content--chat > .card.chat {
+	z-index: 1;
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid rgba(201,168,76,0.12) !important;
+	background:
+		linear-gradient(180deg, rgba(14,20,38,0.94), rgba(10,14,26,0.96)) !important;
+	box-shadow:
+		inset 0 1px 0 rgba(255,242,208,0.04),
+		0 24px 48px rgba(0,0,0,0.22);
+	overflow: hidden;
+}
+
+.chat-split-container,
+.chat-main {
+	min-height: 0;
+}
+
+.chat-main {
+	display: flex;
+	min-width: 0;
+}
+
+.chat-thread {
+	flex: 1 1 auto;
+	min-height: 0;
+	padding: 10px 20px 20px !important;
+}
+
+.chat-thread-inner {
+	width: min(100%, 860px);
+	margin-inline: auto;
+}
+
+.agent-chat__input,
+.chat-compose,
+.chat-composer {
+	padding: 12px 16px 14px !important;
+}
+
+.chat-controls__session-row {
+	display: grid !important;
+	grid-template-columns: minmax(300px, 1fr) 74px minmax(230px, 0.78fr);
+	align-items: stretch;
+	gap: 8px;
+	width: min(100%, 640px);
+	max-width: 640px;
+}
+
+.chat-controls__session,
+.chat-controls__model {
+	min-width: 0;
+	position: relative;
+}
+
+.chat-controls__session select,
+.chat-controls__model select {
+	width: 100%;
+	min-height: 48px;
+	padding: 0 38px 0 14px;
+	border: 1px solid rgba(201,168,76,0.14);
+	border-radius: 14px;
+	background:
+		linear-gradient(180deg, rgba(17,24,43,0.9), rgba(13,18,32,0.96));
+	color: var(--text-strong);
+	box-shadow: inset 0 1px 0 rgba(255,242,208,0.03);
+	appearance: none;
+	-webkit-appearance: none;
+	cursor: pointer;
+}
+
+.chat-controls__session::after,
+.chat-controls__model::after {
+	content: "";
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	margin-top: -7px;
+	border-right: 2px solid rgba(224,191,104,0.72);
+	border-bottom: 2px solid rgba(224,191,104,0.72);
+	transform: rotate(45deg);
+	pointer-events: none;
+}
+
+.chat-controls {
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.chat-controls__separator {
+	width: 1px !important;
+	min-width: 1px;
+	height: 24px;
+	align-self: center;
+}
+
+.chat-controls .btn.btn--sm.btn--icon {
+	min-width: 42px;
+	height: 42px;
+	border-radius: 14px;
+}
+
+.buli-session-native {
+	position: relative !important;
+	width: 100% !important;
+	height: auto !important;
+	opacity: 1 !important;
+	pointer-events: auto !important;
+}
+
+.buli-session-picker {
+	position: relative;
+	width: 74px;
+	min-width: 74px;
+	z-index: 20;
+	pointer-events: auto;
+}
+
+.buli-session-trigger {
+	width: 100%;
+	height: 100%;
+	min-height: 48px;
+	padding: 0 10px;
+	display: inline-grid;
+	grid-template-columns: 1fr;
+	grid-template-rows: auto auto;
+	justify-items: center;
+	gap: 2px;
+	align-items: center;
+	border: 1px solid rgba(201,168,76,0.14);
+	border-radius: 14px;
+	background:
+		linear-gradient(180deg, rgba(17,24,43,0.9), rgba(13,18,32,0.96));
+	color: var(--text);
+	cursor: pointer;
+	position: relative;
+	transition:
+		border-color var(--buli-transition-fast),
+		background var(--buli-transition-fast),
+		transform var(--buli-transition-fast),
+		box-shadow var(--buli-transition-fast);
+	box-shadow:
+		inset 0 1px 0 rgba(255,242,208,0.04),
+		0 8px 18px rgba(0,0,0,0.14);
+	pointer-events: auto;
+}
+
+.buli-session-trigger:hover,
+.buli-session-trigger.is-open {
+	border-color: rgba(224,191,104,0.32);
+	background:
+		linear-gradient(180deg, rgba(23,32,58,0.98), rgba(14,20,38,1));
+	transform: translateY(-1px);
+	box-shadow:
+		inset 0 1px 0 rgba(255,242,208,0.06),
+		0 12px 24px rgba(0,0,0,0.2),
+		0 0 0 1px rgba(201,168,76,0.06);
+}
+
+.buli-session-trigger:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	transform: none !important;
+	box-shadow:
+		inset 0 1px 0 rgba(255,242,208,0.03),
+		0 6px 14px rgba(0,0,0,0.1);
+}
+
+.buli-session-trigger__icon {
+	display: none;
+}
+
+.buli-session-trigger__caption {
+	font-size: 11px;
+	font-weight: 800;
+	color: rgba(255,236,189,0.96);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.buli-session-trigger__count {
+	min-width: 28px;
+	height: 22px;
+	padding: 0 7px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999px;
+	background: rgba(201,168,76,0.12);
+	color: rgba(224,191,104,0.92);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.buli-session-trigger__chevron {
+	position: absolute;
+	left: 10px;
+	top: 50%;
+	width: 10px;
+	height: 10px;
+	margin-top: -6px;
+	border-right: 2px solid rgba(224,191,104,0.68);
+	border-bottom: 2px solid rgba(224,191,104,0.68);
+	transform: rotate(45deg);
+	transition: transform var(--buli-transition-fast);
+}
+
+.buli-session-trigger.is-open .buli-session-trigger__chevron {
+	transform: rotate(225deg);
+}
+
+.buli-session-popover {
+	position: absolute;
+	top: calc(100% + 10px);
+	left: 0;
+	z-index: 90;
+	width: min(560px, calc(100vw - 64px));
+	max-height: min(72vh, 760px);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px;
+	border: 1px solid rgba(201,168,76,0.18);
+	border-radius: 18px;
+	background:
+		radial-gradient(circle at top right, rgba(201,168,76,0.08), transparent 28%),
+		linear-gradient(180deg, rgba(12,18,34,0.98), rgba(9,13,24,0.985));
+	box-shadow:
+		0 26px 60px rgba(0,0,0,0.44),
+		0 0 0 1px rgba(255,242,208,0.03);
+	backdrop-filter: blur(22px) saturate(1.05);
+}
+
+.buli-session-current {
+	padding: 12px 13px;
+	border: 1px solid rgba(201,168,76,0.12);
+	border-radius: 16px;
+	background: rgba(201,168,76,0.06);
+	display: grid;
+	gap: 6px;
+}
+
+.buli-session-current__top {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.buli-session-current__eyebrow {
+	font-size: 10px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgba(224,191,104,0.56);
+}
+
+.buli-session-current__title {
+	font-size: 17px;
+	font-weight: 760;
+	color: var(--text-strong);
+	line-height: 1.28;
+	word-break: break-word;
+}
+
+.buli-session-current__summary,
+.buli-session-item__summary,
+.buli-session-recent__chip-summary {
+	font-size: 12px;
+	line-height: 1.45;
+	color: rgba(214, 221, 235, 0.88);
+	word-break: break-word;
+}
+
+.buli-session-current__meta,
+.buli-session-summary,
+.buli-session-footnote,
+.buli-session-item__meta {
+	font-size: 12px;
+	color: rgba(157,168,192,0.72);
+}
+
+.buli-session-summary {
+	display: block;
+}
+
+.buli-session-current__key,
+.buli-session-item__key {
+	font-size: 11px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	letter-spacing: 0.03em;
+	color: rgba(190,198,214,0.62);
+	word-break: break-all;
+}
+
+.buli-session-overview {
+	display: grid;
+	grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+	gap: 12px;
+	align-items: stretch;
+}
+
+.buli-session-overview__side {
+	display: grid;
+	gap: 8px;
+	align-content: start;
+}
+
+.buli-session-block {
+	display: grid;
+	gap: 8px;
+}
+
+.buli-session-overview__label,
+.buli-session-block__title {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgba(224,191,104,0.72);
+}
+
+.buli-session-search {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 10px;
+	padding: 0 12px;
+	min-height: 46px;
+	border: 1px solid rgba(201,168,76,0.14);
+	border-radius: 14px;
+	background: rgba(17,24,43,0.74);
+}
+
+.buli-session-search__icon {
+	width: 14px;
+	height: 14px;
+	border: 2px solid rgba(224,191,104,0.7);
+	border-radius: 999px;
+	position: relative;
+}
+
+.buli-session-search__icon::after {
+	content: "";
+	position: absolute;
+	right: -5px;
+	bottom: -4px;
+	width: 6px;
+	height: 2px;
+	background: rgba(224,191,104,0.7);
+	transform: rotate(45deg);
+	transform-origin: center;
+}
+
+.buli-session-search__input {
+	border: none;
+	outline: none;
+	background: transparent;
+	color: var(--text-strong);
+	min-width: 0;
+}
+
+.buli-session-search__input::placeholder {
+	color: rgba(157,168,192,0.6);
+}
+
+.buli-session-search__clear,
+.buli-session-section__toggle {
+	border: none;
+	background: transparent;
+	color: rgba(224,191,104,0.78);
+	cursor: pointer;
+	padding: 0;
+}
+
+.buli-session-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	overflow: visible;
+	padding-bottom: 0;
+}
+
+.buli-session-filter {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 7px 11px;
+	border: 1px solid rgba(201,168,76,0.12);
+	border-radius: 999px;
+	background: rgba(17,24,43,0.6);
+	color: rgba(211,218,232,0.82);
+	cursor: pointer;
+	transition: border-color var(--buli-transition-fast), background var(--buli-transition-fast);
+}
+
+.buli-session-filter:hover,
+.buli-session-filter.is-active {
+	border-color: rgba(224,191,104,0.28);
+	background: rgba(201,168,76,0.12);
+	color: var(--text-strong);
+}
+
+.buli-session-filter__count {
+	font-size: 11px;
+	color: rgba(224,191,104,0.7);
+}
+
+.buli-session-sections {
+	min-height: 0;
+	max-height: min(52vh, 580px);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	overflow: auto;
+	padding-right: 4px;
+}
+
+.buli-session-section {
+	display: grid;
+	gap: 10px;
+}
+
+.buli-session-section__head,
+.buli-session-section__title-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.buli-session-section__title {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: rgba(224,191,104,0.78);
+}
+
+.buli-session-section__count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: rgba(201,168,76,0.12);
+	color: rgba(224,191,104,0.92);
+	font-size: 11px;
+}
+
+.buli-session-list {
+	display: grid;
+	gap: 6px;
+}
+
+.buli-session-item {
+	width: 100%;
+	padding: 11px 12px;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	border: 1px solid rgba(201,168,76,0.1);
+	border-radius: 14px;
+	background: rgba(16,22,38,0.72);
+	color: var(--text);
+	cursor: pointer;
+	text-align: left;
+	transition:
+		border-color var(--buli-transition-fast),
+		background var(--buli-transition-fast),
+		transform var(--buli-transition-fast);
+}
+
+.buli-session-item:hover,
+.buli-session-item.is-active {
+	border-color: rgba(224,191,104,0.28);
+	background: rgba(201,168,76,0.09);
+	transform: translateY(-1px);
+}
+
+.buli-session-item.is-current {
+	border-color: rgba(224,191,104,0.38);
+	box-shadow: inset 0 0 0 1px rgba(224,191,104,0.1);
+}
+
+.buli-session-item__main {
+	min-width: 0;
+	display: grid;
+	gap: 5px;
+}
+
+.buli-session-item__label {
+	font-size: 14px;
+	font-weight: 650;
+	color: var(--text-strong);
+	line-height: 1.35;
+	word-break: break-word;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.buli-session-item__side {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	padding-top: 2px;
+}
+
+.buli-session-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 24px;
+	padding: 0 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.buli-session-badge--core {
+	background: rgba(201,168,76,0.14);
+	color: rgba(224,191,104,0.92);
+}
+
+.buli-session-badge--dashboard {
+	background: rgba(123,167,255,0.14);
+	color: #9fc2ff;
+}
+
+.buli-session-badge--subagent {
+	background: rgba(74,163,111,0.14);
+	color: #86d4a5;
+}
+
+.buli-session-badge--agent {
+	background: rgba(155,132,255,0.14);
+	color: #c5b5ff;
+}
+
+.buli-session-badge--channel {
+	background: rgba(86,145,173,0.14);
+	color: #9bd3ef;
+}
+
+.buli-session-badge--system,
+.buli-session-badge--other {
+	background: rgba(145,156,180,0.14);
+	color: rgba(211,218,232,0.74);
+}
+
+.buli-session-empty {
+	padding: 20px 12px;
+	border: 1px dashed rgba(201,168,76,0.16);
+	border-radius: 16px;
+	background: rgba(17,24,43,0.42);
+	display: grid;
+	gap: 6px;
+	color: rgba(211,218,232,0.82);
+}
+
+.buli-session-empty strong {
+	font-size: 14px;
+	color: var(--text-strong);
+}
+
+@media (max-width: 1560px) {
+	body.lpt-workbench > #buli-team-panel {
+		width: min(332px, 29vw) !important;
+	}
+
+	.shell {
+		grid-template-columns: clamp(214px, 17vw, 244px) minmax(0, 1fr) 332px !important;
+	}
+
+	aside.right-console,
+	.right-console,
+	#buli-team-panel.buli-integrated-host {
+		width: 332px !important;
+		min-width: 332px !important;
+	}
+}
+
+@media (max-width: 1380px) {
+	.content.content--chat > .content-header {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.content.content--chat .page-meta {
+		justify-content: flex-start;
+	}
+
+	.chat-controls__session-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.buli-session-popover {
+		width: min(100%, calc(100vw - 48px));
+	}
+}
+
+@media (max-width: 1200px) {
+	.content.content--chat {
+		padding-inline: 14px !important;
+	}
+
+	.content.content--chat > .content-header,
+	.content.content--chat > .card.chat {
+		width: 100%;
+	}
+}
+
+/* ==========================================================================
+   §T16  历史会话管理 + 浅深主题强化 + 输入模式切换
+   ========================================================================== */
+
+:root {
+	--buli-workbench-body-bg:
+		radial-gradient(circle at top left, rgba(201,168,76,0.08), transparent 22%),
+		linear-gradient(180deg, #0b1020, #090d18);
+	--buli-chat-shell-glow:
+		radial-gradient(circle at 58% 14%, rgba(201,168,76,0.08), transparent 32%),
+		radial-gradient(circle at 52% 36%, rgba(123,167,255,0.06), transparent 28%);
+	--buli-chat-card-fill:
+		linear-gradient(180deg, rgba(14,20,38,0.94), rgba(10,14,26,0.96));
+	--buli-chat-card-border: rgba(201,168,76,0.12);
+	--buli-chat-card-shadow:
+		inset 0 1px 0 rgba(255,242,208,0.04),
+		0 24px 48px rgba(0,0,0,0.22);
+	--buli-chat-composer-fill:
+		linear-gradient(180deg, rgba(10,16,28,0.96), rgba(12,18,32,0.98));
+	--buli-chat-composer-shadow:
+		inset 0 1px 0 rgba(255,242,208,0.03),
+		0 -18px 36px rgba(3,7,16,0.32);
+	--buli-session-surface:
+		linear-gradient(180deg, rgba(17,24,43,0.94), rgba(13,18,32,0.98));
+	--buli-session-surface-hover:
+		linear-gradient(180deg, rgba(23,32,58,0.98), rgba(14,20,38,1));
+	--buli-session-popover-fill:
+		radial-gradient(circle at top right, rgba(201,168,76,0.08), transparent 28%),
+		linear-gradient(180deg, rgba(12,18,34,0.98), rgba(9,13,24,0.985));
+	--buli-session-meta: rgba(157,168,192,0.76);
+	--buli-session-chip-fill: rgba(16,22,38,0.76);
+	--buli-mode-surface: rgba(15,22,38,0.76);
+	--buli-mode-surface-active: rgba(201,168,76,0.14);
+	--buli-mode-text: rgba(211,218,232,0.82);
+	--buli-mode-text-active: rgba(255,236,189,0.98);
+}
+
+:root[data-theme-mode=light] {
+	--buli-workbench-body-bg:
+		radial-gradient(circle at top left, rgba(171,134,61,0.10), transparent 24%),
+		radial-gradient(circle at 72% 8%, rgba(124,147,189,0.12), transparent 28%),
+		linear-gradient(180deg, #f7f1e7, #efe6d7);
+	--buli-chat-shell-glow:
+		radial-gradient(circle at 68% 10%, rgba(188,146,60,0.14), transparent 28%),
+		radial-gradient(circle at 24% 22%, rgba(120,142,184,0.12), transparent 24%);
+	--buli-chat-card-fill:
+		linear-gradient(180deg, rgba(255,251,245,0.97), rgba(245,237,224,0.985));
+	--buli-chat-card-border: rgba(157,123,54,0.18);
+	--buli-chat-card-shadow:
+		inset 0 1px 0 rgba(255,255,255,0.86),
+		0 24px 48px rgba(94,68,28,0.10);
+	--buli-chat-composer-fill:
+		linear-gradient(180deg, rgba(255,251,244,0.98), rgba(243,233,217,0.985));
+	--buli-chat-composer-shadow:
+		inset 0 1px 0 rgba(255,255,255,0.9),
+		0 -12px 26px rgba(120,89,42,0.08);
+	--buli-session-surface:
+		linear-gradient(180deg, rgba(255,251,245,0.98), rgba(246,238,226,0.99));
+	--buli-session-surface-hover:
+		linear-gradient(180deg, rgba(255,252,247,1), rgba(241,230,214,0.995));
+	--buli-session-popover-fill:
+		radial-gradient(circle at top right, rgba(183,142,59,0.11), transparent 28%),
+		linear-gradient(180deg, rgba(255,252,246,0.99), rgba(244,235,220,0.995));
+	--buli-session-meta: rgba(101,88,66,0.78);
+	--buli-session-chip-fill: rgba(255,248,238,0.98);
+	--buli-mode-surface: rgba(249,241,229,0.96);
+	--buli-mode-surface-active: rgba(170,130,56,0.12);
+	--buli-mode-text: rgba(87,68,36,0.84);
+	--buli-mode-text-active: #8a5a1e;
+}
+
+body.lpt-workbench {
+	background: var(--buli-workbench-body-bg) !important;
+}
+
+.content.content--chat::before {
+	background: var(--buli-chat-shell-glow);
+}
+
+.content.content--chat > .content-header {
+	border-bottom-color: color-mix(in srgb, var(--buli-chat-card-border) 82%, transparent);
+}
+
+.content.content--chat > .card.chat {
+	border-color: var(--buli-chat-card-border) !important;
+	background: var(--buli-chat-card-fill) !important;
+	box-shadow: var(--buli-chat-card-shadow);
+}
+
+.chat-thread {
+	background:
+		linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.01) 100%);
+}
+
+.agent-chat__input,
+.chat-compose,
+.chat-composer {
+	border-top: 1px solid color-mix(in srgb, var(--buli-chat-card-border) 88%, transparent);
+	background: var(--buli-chat-composer-fill) !important;
+	box-shadow: var(--buli-chat-composer-shadow);
+	backdrop-filter: blur(14px) saturate(1.02);
+}
+
+.agent-chat__toolbar-right {
+	gap: 10px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+.chat-controls__session-row {
+	grid-template-columns: minmax(220px, 1fr) 92px minmax(190px, 0.8fr);
+	gap: 6px;
+	width: min(100%, 556px);
+	max-width: 556px;
+	flex: 0 1 556px;
+	position: relative;
+	z-index: 24;
+}
+
+.chat-controls__session select,
+.chat-controls__model select {
+	min-height: 44px;
+	padding: 0 34px 0 14px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.chat-controls .btn.btn--sm.btn--icon {
+	min-width: 40px;
+	height: 40px;
+	border-radius: 13px;
+}
+
+.buli-session-picker {
+	width: 92px;
+	min-width: 92px;
+	position: relative;
+	z-index: 40;
+	isolation: isolate;
+}
+
+.buli-session-trigger {
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
+	grid-template-rows: 1fr;
+	align-items: center;
+	gap: 7px;
+	min-height: 44px;
+	padding: 0 12px;
+	background: var(--buli-session-surface);
+	pointer-events: auto;
+	user-select: none;
+}
+
+.buli-session-trigger:hover,
+.buli-session-trigger.is-open {
+	background: var(--buli-session-surface-hover);
+}
+
+.buli-session-trigger__icon {
+	display: inline-flex;
+	width: 10px;
+	height: 10px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--accent) 84%, rgba(255,255,255,0.24));
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.buli-session-trigger__caption {
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: none;
+}
+
+.buli-session-trigger__meta,
+.buli-session-current__meta,
+.buli-session-summary,
+.buli-session-footnote,
+.buli-session-item__meta {
+	color: var(--buli-session-meta);
+}
+
+.buli-session-trigger__summary {
+	grid-column: 1 / 2;
+	font-size: 11px;
+	letter-spacing: 0.03em;
+	color: color-mix(in srgb, var(--buli-session-meta) 92%, var(--text) 8%);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.buli-session-trigger__count {
+	min-width: 24px;
+	height: 20px;
+	padding: 0 6px;
+	font-size: 11px;
+}
+
+.buli-session-trigger__chevron {
+	position: static;
+	left: auto;
+	top: auto;
+	width: 8px;
+	height: 8px;
+	margin-top: 0;
+	grid-row: auto;
+}
+
+.buli-session-inline-panel {
+	align-self: stretch;
+	width: min(100%, 920px);
+	margin: 4px auto 0;
+	position: relative;
+	z-index: 12;
+	pointer-events: auto !important;
+}
+
+.buli-session-panel {
+	width: 100%;
+	max-height: min(68vh, 760px);
+	display: grid;
+	grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+	gap: 14px;
+	padding: 20px;
+	border: 1px solid var(--buli-chat-card-border);
+	border-radius: 22px;
+	background: var(--buli-session-popover-fill);
+	box-shadow:
+		inset 0 1px 0 rgba(255,255,255,0.04),
+		0 26px 70px rgba(0,0,0,0.34);
+	position: relative;
+	z-index: 13;
+	pointer-events: auto !important;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.buli-session-panel,
+.buli-session-panel * {
+	pointer-events: auto !important;
+}
+
+.buli-session-panel__head,
+.buli-session-panel__title-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.buli-session-panel__title-wrap {
+	align-items: baseline;
+	justify-content: flex-start;
+}
+
+.buli-session-panel__eyebrow {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--accent) 56%, var(--text) 44%);
+}
+
+.buli-session-panel__title {
+	font-size: 17px;
+	font-weight: 780;
+	color: var(--text-strong);
+}
+
+.buli-session-panel__close {
+	border: 1px solid color-mix(in srgb, var(--buli-chat-card-border) 86%, transparent);
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--buli-mode-surface) 90%, transparent);
+	color: var(--text);
+	min-height: 34px;
+	padding: 0 14px;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	transition:
+		border-color var(--buli-transition-fast),
+		background var(--buli-transition-fast),
+		transform var(--buli-transition-fast);
+}
+
+.buli-session-panel__close:hover {
+	border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+	background: color-mix(in srgb, var(--buli-mode-surface-active) 88%, transparent);
+	transform: translateY(-1px);
+}
+
+.buli-session-current {
+	border-color: color-mix(in srgb, var(--buli-chat-card-border) 80%, transparent);
+	background: color-mix(in srgb, var(--buli-mode-surface-active) 88%, transparent);
+	pointer-events: auto;
+}
+
+.buli-session-search,
+.buli-session-filter,
+.buli-session-item,
+.buli-session-empty {
+	border-color: color-mix(in srgb, var(--buli-chat-card-border) 76%, transparent);
+}
+
+.buli-session-search {
+	background: color-mix(in srgb, var(--buli-mode-surface) 92%, transparent);
+	pointer-events: auto;
+}
+
+.buli-session-item {
+	background: var(--buli-session-chip-fill);
+	pointer-events: auto;
+}
+
+.buli-session-recent {
+	display: grid;
+	gap: 10px;
+}
+
+.buli-session-recent__list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 10px;
+	overflow: visible;
+	padding-bottom: 0;
+	pointer-events: auto;
+}
+
+.buli-session-section--recent .buli-session-recent__list {
+	padding-bottom: 4px;
+}
+
+.buli-session-recent__chip {
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+	padding: 10px 11px;
+	border: 1px solid color-mix(in srgb, var(--buli-chat-card-border) 72%, transparent);
+	border-radius: 14px;
+	background: var(--buli-session-chip-fill);
+	color: var(--text);
+	cursor: pointer;
+	text-align: left;
+	transition:
+		border-color var(--buli-transition-fast),
+		background var(--buli-transition-fast),
+		transform var(--buli-transition-fast);
+	pointer-events: auto;
+	justify-items: start;
+	align-content: start;
+}
+
+.buli-session-filters {
+	pointer-events: auto;
+	overflow: visible;
+}
+
+.buli-session-filter,
+.buli-session-search__input,
+.buli-session-search__clear,
+.buli-session-section__toggle,
+.buli-session-panel__close {
+	pointer-events: auto;
+}
+
+.buli-session-sections {
+	pointer-events: auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+.buli-session-list,
+.buli-session-section,
+.buli-session-item__main,
+.buli-session-item__side {
+	pointer-events: auto;
+}
+
+.buli-session-recent__chip:hover {
+	border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+	background: color-mix(in srgb, var(--buli-mode-surface-active) 84%, var(--buli-session-chip-fill));
+	transform: translateY(-1px);
+}
+
+.buli-session-recent__chip-label {
+	font-size: 13px;
+	font-weight: 650;
+	color: var(--text-strong);
+	line-height: 1.35;
+	word-break: break-word;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.buli-session-recent__chip-summary {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	color: rgba(205, 213, 229, 0.78);
+}
+
+.buli-session-recent__chip-meta {
+	font-size: 11px;
+	color: var(--buli-session-meta);
+}
+
+.buli-composer-mode {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px;
+	border: 1px solid color-mix(in srgb, var(--buli-chat-card-border) 82%, transparent);
+	border-radius: 999px;
+	background: var(--buli-mode-surface);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.buli-composer-mode__btn {
+	border: none;
+	background: transparent;
+	color: var(--buli-mode-text);
+	min-height: 32px;
+	padding: 0 12px;
+	border-radius: 999px;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	transition:
+		background var(--buli-transition-fast),
+		color var(--buli-transition-fast),
+		transform var(--buli-transition-fast);
+}
+
+.buli-composer-mode__btn:hover {
+	transform: translateY(-1px);
+}
+
+.buli-composer-mode__btn.is-active {
+	background: var(--buli-mode-surface-active);
+	color: var(--buli-mode-text-active);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.buli-composer-mode__hint {
+	padding: 0 8px 0 2px;
+	font-size: 11px;
+	letter-spacing: 0.04em;
+	color: var(--buli-session-meta);
+	white-space: nowrap;
+}
+
+.agent-chat__input[data-composer-mode="team"] .chat-send-btn {
+	box-shadow:
+		0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
+		0 10px 22px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+@media (max-width: 1380px) {
+	.chat-controls__session-row {
+		max-width: 100%;
+		grid-template-columns: minmax(200px, 1fr) 86px minmax(176px, 0.74fr);
+		width: min(100%, 520px);
+	}
+
+	.buli-composer-mode {
+		order: -1;
+	}
+
+	.buli-session-overview {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 960px) {
+	.buli-composer-mode__hint {
+		display: none;
+	}
+
+	.buli-session-trigger__summary {
+		display: none;
+	}
+
+	.chat-controls__session-row {
+		grid-template-columns: minmax(0, 1fr) 82px;
+		width: 100%;
+	}
+
+	.chat-controls__model {
+		grid-column: 1 / -1;
+	}
+
+	.buli-session-inline-panel {
+		width: 100%;
+	}
+
+	.buli-session-panel {
+		width: calc(100vw - 32px);
+		max-height: calc(100vh - 160px);
+	}
+}

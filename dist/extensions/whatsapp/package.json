@@ -1,6 +1,6 @@
 {
   "name": "@openclaw/whatsapp",
-  "version": "2026.3.28",
+  "version": "2026.4.2",
   "description": "OpenClaw WhatsApp channel plugin",
   "type": "module",
   "dependencies": {
@@ -26,7 +26,7 @@
       "npmSpec": "@openclaw/whatsapp",
       "localPath": "extensions/whatsapp",
       "defaultChoice": "npm",
-      "minHostVersion": ">=2026.3.28"
+      "minHostVersion": ">=2026.4.2"
     },
     "release": {
       "publishToNpm": true

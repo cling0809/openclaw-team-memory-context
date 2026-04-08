@@ -2,7 +2,7 @@
   "entries": [
     {
       "name": "@openclaw/bluebubbles",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw BlueBubbles channel plugin",
       "openclaw": {
         "channel": {
@@ -31,7 +31,7 @@
     },
     {
       "name": "@openclaw/discord",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Discord channel plugin",
       "openclaw": {
         "channel": {
@@ -54,7 +54,7 @@
     },
     {
       "name": "@openclaw/feishu",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Feishu/Lark channel plugin (community maintained by @m1heng)",
       "openclaw": {
         "channel": {
@@ -79,7 +79,7 @@
     },
     {
       "name": "@openclaw/msteams",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Microsoft Teams channel plugin",
       "openclaw": {
         "channel": {
@@ -103,7 +103,7 @@
     },
     {
       "name": "@openclaw/nextcloud-talk",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Nextcloud Talk channel plugin",
       "openclaw": {
         "channel": {
@@ -129,7 +129,7 @@
     },
     {
       "name": "@openclaw/nostr",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Nostr channel plugin for NIP-04 encrypted DMs",
       "openclaw": {
         "channel": {
@@ -151,7 +151,7 @@
     },
     {
       "name": "@openclaw/whatsapp",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw WhatsApp channel plugin",
       "openclaw": {
         "channel": {
@@ -173,7 +173,7 @@
     },
     {
       "name": "@openclaw/zalo",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Zalo channel plugin",
       "openclaw": {
         "channel": {
@@ -198,7 +198,7 @@
     },
     {
       "name": "@openclaw/zalouser",
-      "version": "2026.3.28",
+      "version": "2026.4.2",
       "description": "OpenClaw Zalo Personal Account plugin via native zca-js integration",
       "openclaw": {
         "channel": {
