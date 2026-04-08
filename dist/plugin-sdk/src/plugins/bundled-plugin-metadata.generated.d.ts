@@ -8,7 +8,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/acpx";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw ACP runtime backend via acpx";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -135,7 +135,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "discovery.js"];
     readonly packageName: "@openclaw/amazon-bedrock-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Amazon Bedrock provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -159,7 +159,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "cli-backend.js", "cli-migration.js", "cli-shared.js", "media-understanding-provider.js"];
     readonly packageName: "@openclaw/anthropic-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Anthropic provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -227,7 +227,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/bluebubbles";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw BlueBubbles channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -249,7 +249,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/bluebubbles";
             readonly localPath: "extensions/bluebubbles";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -738,7 +738,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["web-search-provider.js"];
     readonly packageName: "@openclaw/brave-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Brave plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -793,7 +793,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["browser-runtime-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/browser-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw browser tool plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -816,7 +816,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/byteplus-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw BytePlus provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -856,7 +856,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/chutes-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Chutes.ai provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -906,7 +906,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js"];
     readonly packageName: "@openclaw/cloudflare-ai-gateway-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Cloudflare AI Gateway provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -948,7 +948,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/copilot-proxy";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Copilot Proxy provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -983,7 +983,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["audio.js", "media-understanding-provider.js"];
     readonly packageName: "@openclaw/deepgram-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Deepgram media-understanding provider";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -1008,7 +1008,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/deepseek-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw DeepSeek provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -1048,7 +1048,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js"];
     readonly packageName: "@openclaw/diagnostics-otel";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw diagnostics OpenTelemetry exporter";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -1070,7 +1070,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js"];
     readonly packageName: "@openclaw/diffs";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw diff viewer plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -1271,7 +1271,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["action-runtime-api.js", "api.js", "channel-config-api.js", "runtime-api.js", "session-key-api.js", "timeouts.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/discord";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Discord channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -1291,7 +1291,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/discord";
             readonly localPath: "extensions/discord";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -3766,7 +3766,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["web-search-provider.js"];
     readonly packageName: "@openclaw/duckduckgo-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw DuckDuckGo plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -3815,7 +3815,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["speech-provider.js", "tts.js"];
     readonly packageName: "@openclaw/elevenlabs-speech";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw ElevenLabs speech plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -3840,7 +3840,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["web-search-provider.js"];
     readonly packageName: "@openclaw/exa-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Exa plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -3886,7 +3886,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["image-generation-provider.js", "onboard.js"];
     readonly packageName: "@openclaw/fal-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw fal provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -3935,7 +3935,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js", "setup-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/feishu";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Feishu/Lark channel plugin (community maintained by @m1heng)";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -3955,7 +3955,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/feishu";
             readonly localPath: "extensions/feishu";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -5003,7 +5003,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["web-search-provider.js"];
     readonly packageName: "@openclaw/firecrawl-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Firecrawl plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -5057,7 +5057,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "login.js", "models-defaults.js", "models.js", "token.js", "usage.js"];
     readonly packageName: "@openclaw/github-copilot-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw GitHub Copilot provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -5095,7 +5095,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "cli-backend.js", "gemini-cli-provider.js", "image-generation-provider.js", "media-understanding-provider.js", "model-id.js", "oauth.credentials.js", "oauth.flow.js", "oauth.http.js", "oauth.js", "oauth.project.js", "oauth.runtime.js", "oauth.shared.js", "oauth.token.js", "provider-models.js", "runtime-api.js", "web-search-provider.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/google-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Google plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -5181,7 +5181,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/googlechat";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Google Chat channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -5203,7 +5203,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/googlechat";
             readonly localPath: "extensions/googlechat";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -5952,7 +5952,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["media-understanding-provider.js"];
     readonly packageName: "@openclaw/groq-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Groq media-understanding provider";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -5977,7 +5977,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/huggingface-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Hugging Face provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -6023,7 +6023,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/imessage";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw iMessage channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -6626,7 +6626,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js"];
     readonly packageName: "@openclaw/irc";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw IRC channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -6643,7 +6643,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly systemImage: "network";
         };
         readonly install: {
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -7270,7 +7270,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js", "provider-catalog.js", "provider-models.js", "shared.js"];
     readonly packageName: "@openclaw/kilocode-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Kilo Gateway provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7311,7 +7311,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/kimi-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Kimi provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7357,7 +7357,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js", "setup-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/line";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw LINE channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7378,7 +7378,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/line";
             readonly localPath: "extensions/line";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -7617,7 +7617,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/litellm-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw LiteLLM provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7658,7 +7658,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js"];
     readonly packageName: "@openclaw/llm-task";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw JSON-only LLM task plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7706,7 +7706,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/lobster";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "Lobster workflow tool plugin (typed pipelines + resumable approvals)";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7735,7 +7735,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "helper-api.js", "legacy-crypto-inspector.js", "runtime-api.js", "thread-bindings-runtime.js"];
     readonly runtimeSidecarArtifacts: readonly ["helper-api.js", "runtime-api.js", "thread-bindings-runtime.js"];
     readonly packageName: "@openclaw/matrix";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Matrix channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -7754,7 +7754,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/matrix";
             readonly localPath: "extensions/matrix";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -8258,7 +8258,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/mattermost";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Mattermost channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -8276,7 +8276,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/mattermost";
             readonly localPath: "extensions/mattermost";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -8836,7 +8836,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/memory-core";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw core memory search plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -8859,7 +8859,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "config.js", "lancedb-runtime.js"];
     readonly packageName: "@openclaw/memory-lancedb";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw LanceDB-backed long-term memory plugin with auto-recall/capture";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -8867,7 +8867,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/memory-lancedb";
             readonly localPath: "extensions/memory-lancedb";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -8967,7 +8967,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["speech-provider.js", "tts.js"];
     readonly packageName: "@openclaw/microsoft-speech";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Microsoft speech plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -8992,7 +8992,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["auth.js", "cli.js", "onboard.js", "provider.js", "runtime.js", "shared-runtime.js", "shared.js"];
     readonly packageName: "@openclaw/microsoft-foundry";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Microsoft Foundry provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9038,7 +9038,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "image-generation-provider.js", "media-understanding-provider.js", "model-definitions.js", "oauth.js", "oauth.runtime.js", "onboard.js", "provider-catalog.js", "provider-models.js"];
     readonly packageName: "@openclaw/minimax-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw MiniMax provider and OAuth plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9119,7 +9119,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "media-understanding-provider.js", "model-definitions.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/mistral-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Mistral provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9162,7 +9162,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "model-definitions.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/modelstudio-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Model Studio provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9242,7 +9242,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "media-understanding-provider.js", "onboard.js", "provider-catalog.js", "web-search-provider.js"];
     readonly packageName: "@openclaw/moonshot-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Moonshot provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9334,7 +9334,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/msteams";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Microsoft Teams channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9353,7 +9353,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/msteams";
             readonly localPath: "extensions/msteams";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -9814,7 +9814,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/nextcloud-talk";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Nextcloud Talk channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -9834,7 +9834,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/nextcloud-talk";
             readonly localPath: "extensions/nextcloud-talk";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -10508,7 +10508,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js", "setup-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/nostr";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Nostr channel plugin for NIP-04 encrypted DMs";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10527,7 +10527,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/nostr";
             readonly localPath: "extensions/nostr";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -10639,7 +10639,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/nvidia-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw NVIDIA provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10667,7 +10667,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/ollama-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Ollama provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10705,7 +10705,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/open-prose";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenProse VM skill pack plugin (slash command + telemetry).";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10730,7 +10730,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "cli-backend.js", "default-models.js", "image-generation-provider.js", "media-understanding-provider.js", "openai-codex-auth-identity.js", "openai-codex-catalog.js", "openai-codex-provider.js", "openai-codex-provider.runtime.js", "openai-provider.js", "shared.js", "speech-provider.js", "tts.js"];
     readonly packageName: "@openclaw/openai-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw OpenAI provider plugins";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10786,7 +10786,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js"];
     readonly packageName: "@openclaw/opencode-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw OpenCode Zen provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10826,7 +10826,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js"];
     readonly packageName: "@openclaw/opencode-go-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw OpenCode Go provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10866,7 +10866,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "media-understanding-provider.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/openrouter-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw OpenRouter provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -10908,7 +10908,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
         readonly built: "index.js";
     };
     readonly packageName: "@openclaw/openshell-sandbox";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw OpenShell sandbox backend";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -11037,7 +11037,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["web-search-provider.js"];
     readonly packageName: "@openclaw/perplexity-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Perplexity plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -11097,7 +11097,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/qianfan-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Qianfan provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -11137,7 +11137,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "defaults.js", "models.js"];
     readonly packageName: "@openclaw/sglang-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw SGLang provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -11179,7 +11179,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js", "reaction-runtime-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/signal";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Signal channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -11851,7 +11851,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "channel-config-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/slack";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Slack channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -13447,7 +13447,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["setup-api.js"];
     readonly packageName: "@openclaw/synology-chat";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "Synology Chat channel plugin for OpenClaw";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -13465,7 +13465,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/synology-chat";
             readonly localPath: "extensions/synology-chat";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -13505,7 +13505,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/synthetic-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Synthetic provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -13545,7 +13545,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["web-search-provider.js"];
     readonly packageName: "@openclaw/tavily-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Tavily plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -13605,7 +13605,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["allow-from.js", "api.js", "channel-config-api.js", "runtime-api.js", "update-offset-runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/telegram";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Telegram channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -15550,7 +15550,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js", "setup-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/tlon";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Tlon/Urbit channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -15569,7 +15569,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/tlon";
             readonly localPath: "extensions/tlon";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -15756,7 +15756,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/together-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Together provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -15797,7 +15797,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/twitch";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Twitch channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -15810,7 +15810,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly aliases: readonly ["twitch-chat"];
         };
         readonly install: {
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -16014,7 +16014,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/venice-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Venice provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -16054,7 +16054,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/vercel-ai-gateway-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Vercel AI Gateway provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -16094,7 +16094,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "defaults.js", "models.js"];
     readonly packageName: "@openclaw/vllm-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw vLLM provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -16132,12 +16132,12 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js", "runtime-entry.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/voice-call";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw voice-call plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
         readonly install: {
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -16759,7 +16759,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "models.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/volcengine-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Volcengine provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -16804,7 +16804,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["action-runtime-api.js", "action-runtime.runtime.js", "api.js", "auth-presence.js", "channel-config-api.js", "light-runtime-api.js", "login-qr-api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["light-runtime-api.js", "runtime-api.js"];
     readonly packageName: "@openclaw/whatsapp";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw WhatsApp channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -16823,7 +16823,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/whatsapp";
             readonly localPath: "extensions/whatsapp";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -17402,7 +17402,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "code-execution.js", "model-definitions.js", "model-id.js", "onboard.js", "provider-catalog.js", "provider-models.js", "stream.js", "web-search.js", "x-search.js"];
     readonly packageName: "@openclaw/xai-plugin";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw xAI plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -17511,7 +17511,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     };
     readonly publicSurfaceArtifacts: readonly ["api.js", "onboard.js", "provider-catalog.js"];
     readonly packageName: "@openclaw/xiaomi-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Xiaomi provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -17552,7 +17552,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "detect.js", "media-understanding-provider.js", "model-definitions.js", "onboard.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/zai-provider";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Z.AI provider plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -17652,7 +17652,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/zalo";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Zalo channel plugin";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -17672,7 +17672,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/zalo";
             readonly localPath: "extensions/zalo";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {
@@ -18084,7 +18084,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
     readonly publicSurfaceArtifacts: readonly ["api.js", "runtime-api.js"];
     readonly runtimeSidecarArtifacts: readonly ["runtime-api.js"];
     readonly packageName: "@openclaw/zalouser";
-    readonly packageVersion: "2026.3.28";
+    readonly packageVersion: "2026.4.2";
     readonly packageDescription: "OpenClaw Zalo Personal Account plugin via native zca-js integration";
     readonly packageManifest: {
         readonly extensions: readonly ["./index.ts"];
@@ -18104,7 +18104,7 @@ export declare const GENERATED_BUNDLED_PLUGIN_METADATA: readonly [{
             readonly npmSpec: "@openclaw/zalouser";
             readonly localPath: "extensions/zalouser";
             readonly defaultChoice: "npm";
-            readonly minHostVersion: ">=2026.3.28";
+            readonly minHostVersion: ">=2026.4.2";
         };
     };
     readonly manifest: {

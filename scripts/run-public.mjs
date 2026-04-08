@@ -19,6 +19,10 @@ function hasAgentRoutingTarget(args) {
   });
 }
 
+function isHelpLikeInvocation(args) {
+  return args.includes("--help") || args.includes("-h") || args.includes("--version") || args.includes("-V");
+}
+
 function buildPublicEnv(prepared) {
   return {
     ...process.env,
@@ -152,7 +156,7 @@ async function main() {
   const prepared = await preparePublicOpenClawHome({ quiet: true });
   const env = buildPublicEnv(prepared);
 
-  if (normalizedArgs[0] === "dashboard") {
+  if (normalizedArgs[0] === "dashboard" && !isHelpLikeInvocation(normalizedArgs.slice(1))) {
     await ensurePublicGatewayReady(repoRoot, prepared, env);
   }
 

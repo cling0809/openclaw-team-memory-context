@@ -746,6 +746,10 @@ function normalizeStatus(raw) {
   return 'queued';
 }
 
+function isTerminalChildStatus(status) {
+  return ['done', 'failed', 'timed_out', 'aborted'].includes(normalizeStatus(status));
+}
+
 const CHILD_SESSION_RE = /:subagent:/i;
 const UNKNOWN_TASK_LABELS = new Set(['任务描述未知', 'unknown', '—']);
 
@@ -968,10 +972,25 @@ function syncFromSessions(sessionsInput, options = {}) {
       ? []
       : (baseState.children || []).map((child) => String(child?.sessionKey || '').trim()).filter(Boolean);
     const scopedChildSessionKeys = new Set([...requestedChildSessionKeys, ...persistedChildSessionKeys]);
+    const childBelongsToActiveSession = (sess) => {
+      const parentCandidates = [
+        sess?.spawnedBy,
+        sess?.parentSessionKey,
+        sess?.controllerSessionKey,
+        sess?.requesterSessionKey,
+        sess?.requesterDisplayKey,
+        sess?.orchestratorSessionKey,
+        sess?.ownerSessionKey,
+        sess?.sourceSessionKey,
+      ]
+        .map((value) => String(value || '').trim())
+        .filter(Boolean);
+      return resolvedSessionKey ? parentCandidates.includes(resolvedSessionKey) : false;
+    };
     const childSessions = scopedChildSessionKeys.size > 0
       ? allChildSessions.filter(sess => scopedChildSessionKeys.has(String(sess?.key || '')))
       : requestedSessionKey
-        ? []
+        ? allChildSessions.filter(childBelongsToActiveSession)
         : (sessionReset ? [] : allChildSessions);
     const sameTopSession = !!resolvedSessionKey && !!topSessionKey && resolvedSessionKey === topSessionKey;
     console.log(
@@ -1046,6 +1065,7 @@ function syncFromSessions(sessionsInput, options = {}) {
           taskSummary,
           lastActivityAt,
           summary,
+          _missingRounds: 0,
         };
         if (summary && (!existing.resultDigest || existing.summary !== summary)) {
           updated.resultDigest = summarize(summary);
@@ -1066,6 +1086,7 @@ function syncFromSessions(sessionsInput, options = {}) {
         resultDigest: summary ? summarize(summary) : '',
         error: currStatus === 'failed' ? pickSessionText(sess?.error, sess?.lastError) : '',
         lastActivityAt,
+        _missingRounds: 0,
         // Tranche 1 新增 child 字段
         needsRework: false,
         failedBy: null,
@@ -1146,13 +1167,57 @@ function syncFromSessions(sessionsInput, options = {}) {
       ? [...timelineAdditions.reverse(), ...(baseState.timeline || [])].slice(0, 50)
       : (baseState.timeline || []);
 
-    // 不替换全部 children：保留已完成/已消失的天罡，只更新仍活跃的
+    // 不替换全部 children：保留终态天罡；对“已从 sessions.list 消失但仍是活跃态”的子会话，
+    // 做一次缺席计数，避免它们永远卡在“行令中”。
     const updatedKeys = new Set(updatedChildren.map(c => c.sessionKey));
-    const staleChildren = (baseState.children || []).filter(c =>
-      !updatedKeys.has(c.sessionKey) &&
-      c.status !== 'timed_out' && c.status !== 'done' && c.status !== 'failed' && c.status !== 'aborted'
-    );
-    const mergedChildren = sessionReset ? updatedChildren : [...updatedChildren, ...staleChildren];
+    const carriedChildren = (baseState.children || []).flatMap((child) => {
+      if (updatedKeys.has(child.sessionKey)) return [];
+      const currentStatus = normalizeStatus(child.status);
+      if (isTerminalChildStatus(currentStatus)) {
+        return [{ ...child, _missingRounds: 0 }];
+      }
+
+      const missingRounds = Math.max(0, Number(child?._missingRounds || 0)) + 1;
+      const summaryText = pickSessionText(child?.summary, child?.resultDigest);
+      const shouldPromoteTerminal = missingRounds >= 2;
+      if (!shouldPromoteTerminal) {
+        return [{ ...child, _missingRounds: missingRounds }];
+      }
+
+      const terminalStatus = currentStatus === 'failed'
+        ? 'failed'
+        : currentStatus === 'aborted'
+          ? 'aborted'
+          : 'timed_out';
+      if (terminalStatus === 'failed' || terminalStatus === 'timed_out') {
+        queueTimelineEvent(
+          'task_failed',
+          child.agentId || 'unknown',
+          terminalStatus === 'timed_out'
+            ? `${child.agentId || '子会话'} 失联`
+            : `${child.agentId || '子会话'} 折损`,
+        );
+      } else if (terminalStatus === 'aborted') {
+        queueTimelineEvent(
+          'task_progress',
+          child.agentId || 'unknown',
+          `${child.agentId || '子会话'} 撤令`,
+        );
+      }
+
+      return [{
+        ...child,
+        status: terminalStatus,
+        summary: summaryText || child.summary || '',
+        resultDigest: summaryText ? (child.resultDigest || summarize(summaryText)) : child.resultDigest,
+        error: terminalStatus === 'timed_out'
+          ? (child.error || '执行超时')
+          : child.error,
+        lastActivityAt: now,
+        _missingRounds: missingRounds,
+      }];
+    });
+    const mergedChildren = sessionReset ? updatedChildren : [...updatedChildren, ...carriedChildren];
 
     return {
       ...baseState,

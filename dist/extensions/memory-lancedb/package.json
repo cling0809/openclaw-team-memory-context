@@ -1,6 +1,6 @@
 {
   "name": "@openclaw/memory-lancedb",
-  "version": "2026.3.28",
+  "version": "2026.4.2",
   "description": "OpenClaw LanceDB-backed long-term memory plugin with auto-recall/capture",
   "type": "module",
   "dependencies": {
@@ -16,7 +16,7 @@
       "npmSpec": "@openclaw/memory-lancedb",
       "localPath": "extensions/memory-lancedb",
       "defaultChoice": "npm",
-      "minHostVersion": ">=2026.3.28"
+      "minHostVersion": ">=2026.4.2"
     },
     "release": {
       "publishToNpm": true

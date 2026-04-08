@@ -14548,6 +14548,6 @@ export declare const GENERATED_BASE_CONFIG_SCHEMA: {
             readonly tags: ["security", "auth"];
         };
     };
-    readonly version: "2026.3.28";
+    readonly version: "2026.4.2";
     readonly generatedAt: "2026-03-22T21:17:33.302Z";
 };

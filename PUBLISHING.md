@@ -9,6 +9,19 @@
 
 ## 2. 私有数据检查
 
+先跑自动审计，不要只靠肉眼：
+
+```bash
+pnpm public:audit
+pnpm public:audit:strict
+```
+
+说明：
+
+- `public:audit` 会扫描整个工作树，不要求文件已经 `git add`。
+- `public:audit:strict` 会额外检查 `dist/` 里的文本产物，适合正式推送前最后一轮把关。
+- 如果某个预编译上游 bundle 含有已确认的第三方公开常量，必须只用“精确文件 + 精确字面量”的窄白名单放行，不能做整类忽略。
+
 重点确认以下内容没有进入 git：
 
 - `.openclaw-public/`
@@ -20,21 +33,26 @@
 
 ```bash
 pnpm install
+pnpm public:entrypoints
+pnpm public:smoke
+pnpm pack --dry-run
 pnpm public:setup
 pnpm public:doctor
 pnpm public:onboard
 ```
 
-如果只想验证 CLI 包装层是否正常，至少跑到 `public:setup` 和 `public:doctor`。
+如果只想验证 CLI 包装层是否正常，至少跑到 `pnpm public:entrypoints`、`pnpm pack --dry-run`、`public:setup` 和 `public:doctor`。
 
 ## 4. 推送示例
 
 ```bash
+git checkout -b codex/public-sanitized-release
 git add .
 git commit -m "Prepare sanitized public OpenClaw build"
-git remote add origin git@github.com:cling0809/openclaw-team-memory-context.git
-git push -u origin main
+git push -u origin codex/public-sanitized-release
 ```
+
+建议先推分支，再从 GitHub 上检查文件列表、README 展示和 release assets，确认没有误收私人内容后再合并到 `main`。
 
 ## 5. 对外介绍建议
 

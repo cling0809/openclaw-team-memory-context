@@ -272,9 +272,11 @@ const ActivityTracker = {
         ? sessionsResult
         : [];
     if (!Array.isArray(sessions)) return;
+    const seenKeys = new Set();
     for (const sess of sessions) {
       const key = String(sess.key || '');
       if (!key || !/:subagent:/i.test(key)) continue;
+      seenKeys.add(key);
       const agentId = sess.agentId || (key.match(/^agent:([^:]+):subagent:/i)?.[1]) || sess.role || 'unknown';
       const status = normalizeRunStatus(sess.status || '');
       const toolCalls = sess.usage?.toolUsage?.totalCalls ?? 0;
@@ -291,6 +293,11 @@ const ActivityTracker = {
         model: sess.model || null,
         updatedAt: sess.updatedAt || sess.updated || sess.lastActivityAt || sess.endedAt || Date.now(),
       });
+    }
+    for (const key of Array.from(map.keys())) {
+      if (!seenKeys.has(key)) {
+        map.delete(key);
+      }
     }
   },
   getElapsed() {
@@ -479,7 +486,7 @@ function getApp() {
 }
 
 function getIntegratedRightConsole() {
-  return qs("aside.right-console", getApp() || document);
+  return qs("aside.right-console, .right-console", getApp() || document);
 }
 
 // ── teamTaskStore 辅助 ────────────────────────────────────────────────────────
@@ -839,6 +846,7 @@ function buildPanel() {
   const root = integratedHost || createEl("aside");
   root.id = PANEL_ID;
   if (integratedHost) {
+    document.body.classList.remove("lpt-workbench");
     root.classList.add("buli-integrated-host");
     root.innerHTML = "";
   }
@@ -1426,6 +1434,18 @@ function compactText(value, maxLen = 120) {
   return text.length > maxLen ? `${text.slice(0, maxLen - 1)}…` : text;
 }
 
+function compactMultilineText(value, maxLen = 2400) {
+  const text = String(value ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t\f\v]+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+  if (!text) return '';
+  return text.length > maxLen ? `${text.slice(0, maxLen - 1)}…` : text;
+}
+
 function firstMeaningfulText(...values) {
   for (const value of values) {
     if (value == null) continue;
@@ -1438,6 +1458,377 @@ function firstMeaningfulText(...values) {
   return '';
 }
 
+function collectTextFragmentsDeep(input, out = [], depth = 0, seen = new WeakSet()) {
+  if (input == null || depth > 5) return out;
+  if (typeof input === 'string') {
+    const text = compactMultilineText(input, 2400);
+    if (text) out.push(text);
+    return out;
+  }
+  if (typeof input !== 'object') return out;
+  if (seen.has(input)) return out;
+  seen.add(input);
+  if (Array.isArray(input)) {
+    input.forEach((item) => collectTextFragmentsDeep(item, out, depth + 1, seen));
+    return out;
+  }
+  const preferredKeys = ['text', 'content', 'value', 'markdown', 'message', 'summary', 'result', 'output', 'body'];
+  preferredKeys.forEach((key) => {
+    if (key in input) collectTextFragmentsDeep(input[key], out, depth + 1, seen);
+  });
+  Object.values(input).forEach((value) => collectTextFragmentsDeep(value, out, depth + 1, seen));
+  return out;
+}
+
+function resolveAgentIdFromSeatLabel(label) {
+  const text = String(label || '').trim();
+  if (!text) return '';
+  for (const entry of Object.values(BU_LIANG_ROSTER)) {
+    const fullTitle = String(entry?.fullTitle || '').trim();
+    const seatId = String(entry?.seatId || '').trim();
+    const displayName = String(entry?.displayName || '').trim();
+    if (!fullTitle && !seatId && !displayName) continue;
+    if (
+      text === fullTitle ||
+      text === seatId ||
+      text === displayName ||
+      text.startsWith(`${seatId}·`) ||
+      text.includes(fullTitle) ||
+      (displayName && text.includes(displayName))
+    ) {
+      return String(entry.agentId || '').trim();
+    }
+  }
+  return '';
+}
+
+function normalizeChatDerivedStatus(text) {
+  const value = String(text || '').trim();
+  if (!value) return 'queued';
+  if (/(搜索中|执行中|行令中|研究中|扫描中|汇总中|处理中|进行中|待回传|等回传中)/.test(value)) return 'live';
+  if (/(已回呈|已完成|完成|回传|已返回|已结束)/.test(value)) return 'done';
+  if (/(失联|超时)/.test(value)) return 'timed_out';
+  if (/(撤令|中止|取消)/.test(value)) return 'aborted';
+  if (/(折损|失败|出错|报错)/.test(value)) return 'failed';
+  if (/(候令|待命|待起行|等待)/.test(value)) return 'queued';
+  return 'queued';
+}
+
+const CHAT_TEAM_SIGNAL_RE = /(sessions_spawn|sessions_yield|天罡|子代理|子会话|派工|分派|军令|分道齐进|并进|回呈|回传|超时|失联|折损|扫描|研究|评审|汇总)/;
+const CHAT_SEAT_RE = /(不良帅(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?|天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?)/g;
+
+function isTerminalChatStatus(status) {
+  return ['done', 'failed', 'timed_out', 'aborted'].includes(normalizeRunStatus(status));
+}
+
+function extractSeatLabelsFromLine(line) {
+  const text = String(line || '');
+  const matches = Array.from(text.matchAll(CHAT_SEAT_RE)).map((match) => String(match[1] || '').trim()).filter(Boolean);
+  return Array.from(new Set(matches));
+}
+
+function collectChatSurfaceMessages(limit = 18) {
+  if (typeof document === 'undefined') return [];
+  const thread = document.querySelector('.chat-main .chat-thread') || document.querySelector('.chat-thread');
+  if (!thread) return [];
+  const lines = Array.from(thread.querySelectorAll('.chat-line')).slice(-limit);
+  const messages = [];
+  lines.forEach((line) => {
+    const role = line.classList.contains('user') ? 'user' : (line.classList.contains('assistant') ? 'assistant' : '');
+    if (!role) return;
+    const bubble = line.querySelector('.chat-bubble') || line;
+    const raw = String(bubble.innerText || bubble.textContent || '');
+    const text = compactMultilineText(raw, 4000);
+    if (!text) return;
+    messages.push({ role, content: [{ type: 'text', text }] });
+  });
+  return messages;
+}
+
+function deriveTeamStateFromMessageList(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return null;
+
+  const textPool = [];
+  messages.slice(-36).forEach((msg) => {
+    collectTextFragmentsDeep(msg, textPool);
+  });
+  const joinedText = textPool.join('\n');
+  if (!CHAT_TEAM_SIGNAL_RE.test(joinedText)) {
+    return null;
+  }
+
+  let objective = '';
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
+    if (msg?.role !== 'user') continue;
+    const parts = collectTextFragmentsDeep(msg, [])
+      .map((part) => String(part || '').trim())
+      .filter((part) => {
+        if (!part) return false;
+        if (/^\/(?:new|reset)\b/i.test(part)) return false;
+        if (/^A new session was started via \/new or \/reset/i.test(part)) return false;
+        if (/BEGIN_OPENCLAW_INTERNAL_CONTEXT|END_OPENCLAW_INTERNAL_CONTEXT/.test(part)) return false;
+        return true;
+      });
+    objective = firstMeaningfulText(...parts);
+    if (objective) break;
+  }
+
+  const allLines = textPool
+    .flatMap((block) => String(block || '').split(/\n+/))
+    .map((line) => String(line || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const lines = allLines.slice(-180);
+  let inferredActiveStatus = /(正在并进|分道齐进|等回传中|等待.*回传|搜索中|扫描中|研究中|执行中|行令中|正在拆解|正在分析)/.test(lines.join('\n'))
+    ? '行令中'
+    : '候令';
+
+  const isStatusLike = (value) => {
+    const text = String(value || '').trim();
+    return !!text && (
+      normalizeChatDerivedStatus(text) !== 'queued' ||
+      /(候令|待命|等待|超时|失联|折损|失败|撤令|已遣出|已回呈|已回传|进行中|搜索中|扫描中|待回传|待命中)/.test(text)
+    );
+  };
+
+  const childrenByAgent = new Map();
+  const upsertChild = (seatLabel, taskText, statusText, order) => {
+    const seat = String(seatLabel || '').trim();
+    if (!seat) return;
+    const agentId = resolveAgentIdFromSeatLabel(seat);
+    const key = agentId || seat;
+    const prev = childrenByAgent.get(key) || null;
+    const task = compactText(String(taskText || '').trim(), 72);
+    const statusTextNorm = String(statusText || '').trim();
+    const nextStatus = normalizeChatDerivedStatus(statusTextNorm || inferredActiveStatus);
+    const prevStatus = normalizeRunStatus(prev?.status || prev?.runtimeStatus);
+    const nextIsTerminal = isTerminalChatStatus(nextStatus);
+    const prevIsTerminal = isTerminalChatStatus(prevStatus);
+    const hasExplicitStatus = !!statusTextNorm && (
+      normalizeChatDerivedStatus(statusTextNorm) !== 'queued' ||
+      /(候令|待命|等待|待起行|超时|失联|折损|失败|撤令|已回呈|已回传|行令中|搜索中|扫描中|研究中|进行中|待回传)/.test(statusTextNorm)
+    );
+    const shouldTakeStatus = !prev ||
+      (hasExplicitStatus && (
+        order >= Number(prev?._statusOrder || -1) ||
+        (nextIsTerminal && !prevIsTerminal)
+      ));
+    const mergedStatus = shouldTakeStatus ? nextStatus : (prevStatus || nextStatus);
+    const mergedTask = task || prev?.taskSummary || prev?.task || '';
+    childrenByAgent.set(key, {
+      ...(prev || {}),
+      agentId: agentId || seat,
+      role: agentId || seat,
+      sessionKey: prev?.sessionKey || '',
+      status: mergedStatus,
+      taskSummary: mergedTask,
+      summary: prev?.summary || (nextIsTerminal ? mergedTask : ''),
+      resultDigest: prev?.resultDigest || '',
+      runtimeStatus: mergedStatus,
+      lastActivityAt: Date.now(),
+      _derivedFromChat: true,
+      _statusOrder: shouldTakeStatus ? order : Number(prev?._statusOrder || order),
+      _lineOrder: order,
+    });
+  };
+
+  let latestObjectiveLine = '';
+  lines.forEach((line, order) => {
+    if (/(正在并进|分道齐进|等回传中|等待.*回传|搜索中|扫描中|研究中|执行中|行令中|正在拆解|正在分析)/.test(line)) {
+      inferredActiveStatus = '行令中';
+    }
+    if (/(当前阶段|下一棒|当前策略|等待.*回传|汇总|对比|扫描|任务板|分道齐进|军令目标|目标)/.test(line)) {
+      latestObjectiveLine = line;
+    }
+
+    const tableParts = line
+      .split('|')
+      .map((part) => String(part || '').trim())
+      .filter(Boolean);
+    if (tableParts.length >= 2 && /^(?:天[\u4e00-\u9fff]{1,3}星|不良帅)/.test(tableParts[0])) {
+      const seatLabel = extractSeatLabelsFromLine(tableParts[0])[0] || tableParts[0];
+      const second = tableParts[1] || '';
+      const third = tableParts[2] || '';
+      const secondLooksStatus = isStatusLike(second);
+      const thirdLooksStatus = isStatusLike(third);
+      if (!secondLooksStatus && thirdLooksStatus) {
+        upsertChild(seatLabel, second, third, order);
+        return;
+      }
+      if (secondLooksStatus && !thirdLooksStatus) {
+        upsertChild(seatLabel, third, second, order);
+        return;
+      }
+      if (/^(research|reviewer|coder|qa|frontend|developer|dev|main)$/i.test(second) && third) {
+        upsertChild(seatLabel, third, inferredActiveStatus, order);
+        return;
+      }
+      if (third) {
+        upsertChild(seatLabel, second, thirdLooksStatus ? third : inferredActiveStatus, order);
+        return;
+      }
+      upsertChild(seatLabel, second, inferredActiveStatus, order);
+      return;
+    }
+
+    const arrowMatch = line.match(/(?:^|[•●\-🔵⚪]\s*)((?:天[\u4e00-\u9fff]{1,3}星|不良帅)[^\s>：:]{0,16})\s*(?:->|→|：|:)\s*([^()]{2,80})/);
+    if (arrowMatch) {
+      upsertChild(arrowMatch[1].trim(), arrowMatch[2].trim(), inferredActiveStatus, order);
+      return;
+    }
+
+    const seatLabels = extractSeatLabelsFromLine(line);
+    if (seatLabels.length > 0) {
+      const explicitStatus = normalizeChatDerivedStatus(line);
+      const hasExplicitStatus = isStatusLike(line);
+      seatLabels.forEach((seatLabel) => {
+        const afterSeat = compactText(
+          line
+            .replace(seatLabel, '')
+            .replace(/^[•●\-🔵⚪\s:：>-]+/, '')
+            .trim(),
+          88,
+        );
+        const taskText = hasExplicitStatus
+          ? afterSeat
+              .replace(/^(?:已回呈|已回传|已完成|完成|执行中|搜索中|扫描中|研究中|折损|失败|失联|超时|撤令|中止|待命|候令|待回传)\s*/g, '')
+              .trim()
+          : afterSeat;
+        upsertChild(
+          seatLabel,
+          taskText,
+          hasExplicitStatus ? line : inferredActiveStatus,
+          order,
+        );
+      });
+    }
+  });
+
+  if (!objective) {
+    const objectiveLine = latestObjectiveLine || lines.find((line) => /(?:下一棒|当前策略|等待.*回传|汇总|对比|扫描|任务板|分道齐进|军令目标|目标)/.test(line));
+    if (objectiveLine) objective = compactText(objectiveLine.replace(/^[•\-]+/, '').trim(), 96);
+  }
+
+  const children = Array.from(childrenByAgent.values())
+    .sort((a, b) => Number(b?._lineOrder || 0) - Number(a?._lineOrder || 0))
+    .map((child) => ({
+      agentId: child.agentId,
+      role: child.role,
+      sessionKey: child.sessionKey,
+      status: child.status,
+      taskSummary: child.taskSummary,
+      summary: child.summary,
+      resultDigest: child.resultDigest,
+      runtimeStatus: child.runtimeStatus,
+      lastActivityAt: child.lastActivityAt,
+      _derivedFromChat: true,
+    }));
+
+  if (!objective && children.length === 0) {
+    return null;
+  }
+
+  if (!objective) {
+    objective = children.length > 0
+      ? (children.some((child) => normalizeRunStatus(child.status) === 'live')
+          ? '团队军令执行中'
+          : '本轮天罡已回呈')
+      : '团队军令执行中';
+  }
+
+  const liveChildren = children.filter((child) => normalizeRunStatus(child.status) === 'live');
+  const queuedChildren = children.filter((child) => normalizeRunStatus(child.status) === 'queued');
+
+  return {
+    objective: objective || '团队军令执行中',
+    currentObjectiveDigest: objective || '团队军令执行中',
+    phase: liveChildren.length > 0 ? 'executing' : (queuedChildren.length > 0 ? 'planning' : 'verifying'),
+    currentWorker: liveChildren[0]?.agentId || 'main',
+    children,
+  };
+}
+
+function deriveTeamStateFromChatMessages(app) {
+  const messageDerived = deriveTeamStateFromMessageList(Array.isArray(app?.chatMessages) ? app.chatMessages : []);
+  const domDerived = deriveTeamStateFromMessageList(collectChatSurfaceMessages());
+  const score = (state) => {
+    if (!state) return -1;
+    const children = Array.isArray(state.children) ? state.children.length : 0;
+    const live = Array.isArray(state.children) ? state.children.filter((child) => getChildDisplayStatus(child) === 'live').length : 0;
+    const objectiveScore = String(state.currentObjectiveDigest || state.objective || '').trim() ? 2 : 0;
+    return children * 10 + live * 2 + objectiveScore;
+  };
+  return score(domDerived) >= score(messageDerived) ? domDerived : messageDerived;
+}
+
+function isGenericDerivedTask(text) {
+  const value = String(text || '').trim();
+  return /^(执行中，待回传|已接令，待起行|本轮已回呈|执行超时|执令受阻|已撤令|待命中)$/.test(value);
+}
+
+function mergeChatDerivedChildren(prevChildren, derivedChildren) {
+  const baseChildren = Array.isArray(prevChildren) ? prevChildren : [];
+  const nextChildren = Array.isArray(derivedChildren) ? derivedChildren : [];
+  if (baseChildren.length === 0) return nextChildren.slice();
+  if (nextChildren.length === 0) return baseChildren.slice();
+
+  const merged = baseChildren.map((child) => ({ ...child }));
+  const indexByKey = new Map();
+  merged.forEach((child, index) => {
+    const key = String(child?.agentId || child?.role || child?.sessionKey || '').trim();
+    if (key) indexByKey.set(key, index);
+  });
+
+  nextChildren.forEach((child) => {
+    const mergeKey = String(child?.agentId || child?.role || child?.sessionKey || '').trim();
+    if (!mergeKey) {
+      merged.push({ ...child });
+      return;
+    }
+    const existingIndex = indexByKey.get(mergeKey);
+    if (existingIndex == null) {
+      indexByKey.set(mergeKey, merged.length);
+      merged.push({ ...child });
+      return;
+    }
+
+    const existing = merged[existingIndex] || {};
+    const existingStatus = normalizeRunStatus(existing?.status || existing?.runtimeStatus);
+    const incomingStatus = normalizeRunStatus(child?.status || child?.runtimeStatus);
+    const taskChanged = !!child?.taskSummary && !!existing?.taskSummary && child.taskSummary !== existing.taskSummary;
+    const freshRedispatch = ['live', 'queued'].includes(incomingStatus)
+      && isTerminalChatStatus(existingStatus)
+      && (!!taskChanged || Number(child?.lastActivityAt || 0) >= Number(existing?.lastActivityAt || 0));
+    const takeIncomingStatus = isTerminalChatStatus(incomingStatus)
+      || (!isTerminalChatStatus(existingStatus) && incomingStatus !== 'idle')
+      || freshRedispatch;
+    const useIncomingTask = !!child?.taskSummary && (
+      !existing?.taskSummary ||
+      isGenericDerivedTask(existing.taskSummary) ||
+      taskChanged
+    );
+    const resetTerminalOutcome = freshRedispatch && taskChanged;
+
+    merged[existingIndex] = {
+      ...existing,
+      ...child,
+      sessionKey: existing.sessionKey || child.sessionKey || '',
+      status: takeIncomingStatus ? (child.status || child.runtimeStatus || existing.status) : existing.status,
+      runtimeStatus: takeIncomingStatus ? (child.runtimeStatus || child.status || existing.runtimeStatus) : (existing.runtimeStatus || existing.status),
+      taskSummary: useIncomingTask ? child.taskSummary : (existing.taskSummary || child.taskSummary || ''),
+      summary: resetTerminalOutcome ? '' : (existing.summary || child.summary || ''),
+      resultDigest: resetTerminalOutcome ? '' : (existing.resultDigest || child.resultDigest || ''),
+      error: resetTerminalOutcome ? '' : (existing.error || child.error || ''),
+      lastActivityAt: Math.max(
+        Number(existing.lastActivityAt || 0),
+        Number(child.lastActivityAt || 0),
+      ),
+    };
+  });
+
+  return merged;
+}
+
 function getTrackedChildActivity(child) {
   const sessionKey = getSeatSessionKey(child);
   return sessionKey ? ActivityTracker.getChildActivity(sessionKey) : null;
@@ -1445,9 +1836,13 @@ function getTrackedChildActivity(child) {
 
 function getChildDisplayStatus(child) {
   const tracked = getTrackedChildActivity(child);
+  const explicit = normalizeRunStatus(child?.status || child?.runtimeStatus);
+  if (['done', 'failed', 'timed_out', 'aborted'].includes(explicit)) return explicit;
+  if (tracked && ['done', 'failed', 'timed_out', 'aborted'].includes(tracked.status)) return tracked.status;
   if (tracked?.status === 'live') return 'live';
+  if (explicit === 'live') return 'live';
   if (tracked?.status === 'queued') return 'queued';
-  return normalizeRunStatus(child?.status || child?.runtimeStatus || tracked?.status);
+  return explicit !== 'idle' ? explicit : normalizeRunStatus(tracked?.status);
 }
 
 function getChildTaskText(child, status = getChildDisplayStatus(child)) {
@@ -1667,12 +2062,33 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
     : Array.isArray(sessionsResult) ? sessionsResult : [];
   return sessions.filter(sess => {
     if (!sess?.key || !/:subagent:/.test(sess.key)) return false;
-    const spawnedBy = String(sess.spawnedBy || sess.parentSessionKey || '').trim();
-    return spawnedBy === parentSessionKey;
+    const parentCandidates = [
+      sess.spawnedBy,
+      sess.parentSessionKey,
+      sess.controllerSessionKey,
+      sess.requesterSessionKey,
+      sess.requesterDisplayKey,
+      sess.orchestratorSessionKey,
+      sess.ownerSessionKey,
+      sess.sourceSessionKey,
+    ]
+      .map(value => String(value || '').trim())
+      .filter(Boolean);
+    return parentCandidates.includes(parentSessionKey);
   }).map(sess => {
     const keyStr = String(sess.key || '');
     const agentMatch = keyStr.match(/^agent:([^:]+):subagent:/i);
-    const agentId = agentMatch?.[1] || sess.agentId || sess.assistantAgentId || 'unknown';
+    const agentId =
+      pickSessionText(
+        sess.agentId,
+        sess.agent,
+        sess.assistantAgentId,
+        sess.ownerAgentId,
+        sess.assistantId,
+      ) ||
+      agentMatch?.[1] ||
+      pickSessionText(sess.role) ||
+      'unknown';
     return {
       agentId,
       sessionKey: keyStr,
@@ -1689,27 +2105,88 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
 }
 
 /**
- * 当 orchestration 文件缺失/为空时，用 sessions 里发现的子 agent 充实 orchestrationResult，
- * 让后续 getRenderableChildren / collectActiveChildSessionKeys 都能看到。
+ * 用 sessions.list 的实时子 agent 信息补全/纠正 orchestrationResult，
+ * 避免旧 orchestration children 把新派出的天罡挡住。
  */
 function enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, parentSessionKey) {
-  const hasOrchChildren = Array.isArray(orchestrationResult?.orchestration?.children)
-    && orchestrationResult.orchestration.children.length > 0;
-  if (hasOrchChildren) return orchestrationResult;
-
   const discovered = discoverChildrenFromSessions(sessionsResult, parentSessionKey);
   if (discovered.length === 0) return orchestrationResult;
 
-  console.log('[panel] no orchestration file children, discovered', discovered.length, 'children from sessions.list');
   const base = orchestrationResult && typeof orchestrationResult === 'object' ? orchestrationResult : {};
+  const existingChildren = Array.isArray(base?.orchestration?.children)
+    ? base.orchestration.children
+    : [];
+  const merged = [];
+  const indexBySessionKey = new Map();
+  const indexByAgentId = new Map();
+
+  const rememberIndexes = (child, index) => {
+    const sessionKey = getSeatSessionKey(child);
+    const agentId = String(child?.agentId || '').trim();
+    if (sessionKey) indexBySessionKey.set(sessionKey, index);
+    if (agentId) indexByAgentId.set(agentId, index);
+  };
+
+  existingChildren.forEach((child) => {
+    if (!child || typeof child !== 'object') return;
+    merged.push(child);
+    rememberIndexes(child, merged.length - 1);
+  });
+
+  discovered.forEach((child) => {
+    const sessionKey = getSeatSessionKey(child);
+    const agentId = String(child?.agentId || '').trim();
+    let existingIndex = sessionKey ? indexBySessionKey.get(sessionKey) : undefined;
+    if (existingIndex == null && agentId) {
+      const byAgentIndex = indexByAgentId.get(agentId);
+      if (byAgentIndex != null) {
+        const existing = merged[byAgentIndex];
+        const existingStatus = normalizeRunStatus(existing?.status || existing?.runtimeStatus);
+        const nextStatus = normalizeRunStatus(child?.status || child?.runtimeStatus);
+        const existingTerminal = ['done', 'failed', 'timed_out', 'aborted', 'idle'].includes(existingStatus);
+        const nextActive = nextStatus === 'live' || nextStatus === 'queued';
+        const nextNewer = Number(child?.lastActivityAt || 0) >= Number(existing?.lastActivityAt || 0);
+        if (existingTerminal && nextActive && nextNewer) {
+          existingIndex = byAgentIndex;
+        }
+      }
+    }
+    if (existingIndex == null) {
+      merged.push(child);
+      rememberIndexes(child, merged.length - 1);
+      return;
+    }
+    const existing = merged[existingIndex] || {};
+    merged[existingIndex] = {
+      ...existing,
+      ...child,
+      agentId: child.agentId || existing.agentId,
+      sessionKey: sessionKey || getSeatSessionKey(existing),
+      lastActivityAt: Math.max(
+        Number(existing.lastActivityAt || 0),
+        Number(child.lastActivityAt || 0),
+      ),
+    };
+    rememberIndexes(merged[existingIndex], existingIndex);
+  });
+
+  console.log(
+    '[panel] merged orchestration children with sessions.list',
+    'existing=',
+    existingChildren.length,
+    'discovered=',
+    discovered.length,
+    'merged=',
+    merged.length,
+  );
   return {
     ...base,
     ts: base.ts || Date.now(),
     found: true,
     orchestration: {
       ...(base.orchestration || {}),
-      children: discovered,
-      _syntheticFromSessions: true,
+      children: merged,
+      _syntheticFromSessions: existingChildren.length === 0,
     },
   };
 }
@@ -1773,22 +2250,42 @@ function renderTabArmy(panel, app, orchestrationResult) {
 
   const state = teamTaskStore ? teamTaskStore.getState() : null;
   const orch = orchestrationResult?.orchestration;
+  const chatDerived = deriveTeamStateFromChatMessages(app);
   const resolvedChildren = getRenderableChildren(state, orchestrationResult);
+  const effectiveChildren = resolvedChildren.length > 0 ? resolvedChildren : (chatDerived?.children || []);
   const meta = state ? {
-    phase: state.phase || orch?.phase || '', objective: state.objective || orch?.objective || '',
-    currentWorker: state.currentWorker || orch?.lead || null, nextWorker: state.nextWorker,
+    phase: state.phase || chatDerived?.phase || orch?.phase || '', objective: state.objective || chatDerived?.objective || orch?.objective || '',
+    currentWorker: state.currentWorker || chatDerived?.currentWorker || orch?.lead || null, nextWorker: state.nextWorker,
     lastHandoverReason: state.lastHandoverReason,
-    iterationCount: state.iterationCount ?? 0, children: resolvedChildren,
+    iterationCount: state.iterationCount ?? 0, children: effectiveChildren,
     contextPressure: state.contextPressure ?? 0,
     pressureState: state.pressureState || 'healthy',
     recommendedAction: state.recommendedAction || 'none',
     currentTrancheId: state.currentTrancheId || '',
-    currentObjectiveDigest: state.currentObjectiveDigest || state.objective || orch?.objective || '',
+    currentObjectiveDigest: state.currentObjectiveDigest || state.objective || chatDerived?.currentObjectiveDigest || chatDerived?.objective || orch?.objective || '',
     openIssuesDigest: state.openIssuesDigest || '',
     latestBoundaryId: state.latestBoundaryId || '',
     latestBoundaryMode: state.latestBoundaryMode || '',
     latestBoundaryAt: state.latestBoundaryAt || 0,
     latestBoundarySummaryRef: state.latestBoundarySummaryRef || '',
+  } : (chatDerived ? {
+    phase: chatDerived.phase || '',
+    objective: chatDerived.objective || '',
+    currentWorker: chatDerived.currentWorker || null,
+    nextWorker: null,
+    lastHandoverReason: '',
+    iterationCount: 0,
+    children: chatDerived.children || [],
+    contextPressure: 0,
+    pressureState: 'healthy',
+    recommendedAction: 'none',
+    currentTrancheId: '',
+    currentObjectiveDigest: chatDerived.currentObjectiveDigest || chatDerived.objective || '',
+    openIssuesDigest: '',
+    latestBoundaryId: '',
+    latestBoundaryMode: '',
+    latestBoundaryAt: 0,
+    latestBoundarySummaryRef: '',
   } : (orch ? {
     phase: orch.phase, objective: orch.objective,
     currentWorker: orch.lead, nextWorker: null,
@@ -1804,7 +2301,7 @@ function renderTabArmy(panel, app, orchestrationResult) {
     latestBoundaryMode: '',
     latestBoundaryAt: 0,
     latestBoundarySummaryRef: '',
-  } : null);
+  } : null));
 
   const activity = ActivityTracker.getSnapshot();
   const liveChildren = (meta?.children || []).filter(child => getChildDisplayStatus(child) === 'live');
@@ -1989,7 +2486,17 @@ function renderTabStars(panel, app, agentsResult, orchestrationResult) {
 
   const orch = orchestrationResult?.orchestration;
   const state = teamTaskStore ? teamTaskStore.getState() : null;
-  const children = getRenderableChildren(state, orchestrationResult).slice();
+  const chatDerived = deriveTeamStateFromChatMessages(app);
+  const children = (getRenderableChildren(state, orchestrationResult).slice().length
+    ? getRenderableChildren(state, orchestrationResult).slice()
+    : (chatDerived?.children || []).slice());
+  const hasActiveContext = Boolean(
+    (state?.objective && String(state.objective).trim()) ||
+    (state?.currentObjectiveDigest && String(state.currentObjectiveDigest).trim()) ||
+    (chatDerived?.objective && String(chatDerived.objective).trim()) ||
+    (state?.currentWorker && String(state.currentWorker).trim()) ||
+    (children && children.length > 0),
+  );
   const activeFilter = readPanelState().starsFilter || '常驻';
   const visibleChildren = children.filter(child => matchesStarsFilter(getChildDisplayStatus(child), activeFilter));
 
@@ -2026,7 +2533,9 @@ function renderTabStars(panel, app, agentsResult, orchestrationResult) {
 
   const filters = ['常驻', '全谱', '行令中', '已回呈', '候令', '折损'];
   const filterBar = filters.map(filter => `<button class="bp-filter${activeFilter === filter ? ' active' : ''}" data-filter="${filter}">${filter}</button>`).join('');
-  const h = `<div class="bp-filter-bar" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;margin-bottom:8px">${filterBar}</div><div class="bp-seats">${seatRows || defaultHtml}</div>`;
+  const emptyHtml = `<div class="bp-empty">新局已开 · 尚未派出天罡</div>`;
+  const seatsHtml = hasActiveContext ? (seatRows || defaultHtml) : emptyHtml;
+  const h = `<div class="bp-filter-bar" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;margin-bottom:8px">${filterBar}</div><div class="bp-seats">${seatsHtml}</div>`;
   stableRender(el, h, 'tab-stars');
 
   // ── 天罡席位：点击 session key 复制 ───────────────────────────────────────
@@ -2540,6 +3049,34 @@ async function mountPanel() {
 
     // ── 实时活动追踪（每次 tick 都更新，不等 API） ──
     ActivityTracker.update(app);
+    const chatDerived = deriveTeamStateFromChatMessages(app);
+    if (chatDerived && teamTaskStore?.setState && teamTaskStore?.getState) {
+      const s = teamTaskStore.getState();
+      const hasStoreContext = Boolean(
+        (Array.isArray(s?.children) && s.children.length > 0) ||
+        String(s?.objective || '').trim() ||
+        String(s?.currentObjectiveDigest || '').trim(),
+      );
+      const mergedDerivedChildren = mergeChatDerivedChildren(s?.children || [], chatDerived.children || []);
+      const derivedHasTerminal = mergedDerivedChildren.some((child) => isTerminalChatStatus(child?.status || child?.runtimeStatus));
+      const shouldHydrateFromChat =
+        !hasStoreContext ||
+        (chatDerived.children?.length || 0) > (s?.children?.length || 0) ||
+        derivedHasTerminal ||
+        (!String(s?.objective || s?.currentObjectiveDigest || '').trim() && String(chatDerived.objective || chatDerived.currentObjectiveDigest || '').trim());
+      if (shouldHydrateFromChat) {
+        teamTaskStore.setState(prev => ({
+          ...prev,
+          sessionKey: app.sessionKey || prev.sessionKey || '',
+          objective: prev.objective || chatDerived.objective || '',
+          currentObjectiveDigest: prev.currentObjectiveDigest || chatDerived.currentObjectiveDigest || chatDerived.objective || '',
+          currentWorker: prev.currentWorker || chatDerived.currentWorker || null,
+          phase: prev.phase || chatDerived.phase || 'planning',
+          children: mergeChatDerivedChildren(prev.children || [], chatDerived.children || []),
+          updatedAt: now,
+        }));
+      }
+    }
 
     const signatureState = {
       sessionKey: app.sessionKey,
@@ -2549,6 +3086,32 @@ async function mountPanel() {
       runId: app.chatRunId,
       messageCount: Array.isArray(app.chatMessages) ? app.chatMessages.length : 0,
     };
+    const blankFreshSession = signatureState.messageCount === 0 && !signatureState.sending && !signatureState.runId;
+    if (blankFreshSession && teamTaskStore?.getState) {
+      const s = teamTaskStore.getState();
+      if (
+        (Array.isArray(s?.children) && s.children.length > 0) ||
+        (Array.isArray(s?.timeline) && s.timeline.length > 0) ||
+        String(s?.objective || '').trim() ||
+        String(s?.currentObjectiveDigest || '').trim() ||
+        String(s?.currentWorker || '').trim()
+      ) {
+        teamTaskStore.setState(prev => ({
+          ...prev,
+          sessionKey: app.sessionKey || prev.sessionKey || '',
+          sessionId: '',
+          objective: '',
+          currentObjectiveDigest: '',
+          currentWorker: null,
+          nextWorker: null,
+          phase: '',
+          children: [],
+          timeline: [],
+          issues: [],
+          updatedAt: now,
+        }));
+      }
+    }
     const signature = JSON.stringify(signatureState);
 
     if (signature !== lastSignature) {
@@ -2566,6 +3129,22 @@ async function mountPanel() {
         sessionsResult = null;
       } else if ((Number(prev?.messageCount) || 0) > 0 && signatureState.messageCount === 0) {
         // /new 会清空消息但保留 sessionKey；强制本轮立即重取 sessions，避免旧天罡残留一整个刷新周期。
+        if (teamTaskStore?.setState) {
+          teamTaskStore.setState(s => ({
+            ...s,
+            sessionKey: app.sessionKey || s.sessionKey || '',
+            sessionId: '',
+            objective: '',
+            currentObjectiveDigest: '',
+            currentWorker: null,
+            nextWorker: null,
+            phase: '',
+            children: [],
+            timeline: [],
+            issues: [],
+            updatedAt: now,
+          }));
+        }
         lastFetchAt = 0;
         lastArchiveFetchAt = 0;
         archiveSnapshot = null;
@@ -2593,14 +3172,16 @@ async function mountPanel() {
       sessionsResult = await fetchSessions(app);
       const nextArchiveSnapshot = pickSessionSnapshot(sessionsResult, app.sessionKey);
       const sessionRolled = applySessionRollover(nextArchiveSnapshot, now);
-      orchestrationResult = sessionRolled ? null : await fetchTeamOrchestration(app);
+      orchestrationResult = (sessionRolled || blankFreshSession) ? null : await fetchTeamOrchestration(app);
       // 当 orchestration 文件缺失时，从 sessions.list 的 spawnedBy 字段发现子 agent
-      orchestrationResult = enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, app.sessionKey);
+      orchestrationResult = blankFreshSession
+        ? null
+        : enrichOrchestrationFromSessions(orchestrationResult, sessionsResult, app.sessionKey);
       if (sessionsResult && syncFromSessions) {
         try {
           syncFromSessions(sessionsResult, {
             activeSessionKey: app.sessionKey,
-            activeChildSessionKeys: sessionRolled ? [] : collectActiveChildSessionKeys(orchestrationResult),
+            activeChildSessionKeys: (sessionRolled || blankFreshSession) ? [] : collectActiveChildSessionKeys(orchestrationResult),
           });
         } catch(e) { /* store 未初始化，静默跳过 */ }
         console.log('[panel] after syncFromSessions => teamTaskStore.children.length:', teamTaskStore?.getState()?.children?.length);

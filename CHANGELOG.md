@@ -15,6 +15,14 @@ Docs: https://docs.openclaw.ai
 - Memory/QMD: honor `memory.qmd.update.embedInterval` even when regular QMD update cadence is disabled or slower by arming a dedicated embed-cadence maintenance timer, while avoiding redundant timers when regular updates are already frequent enough. (#37326) Thanks @barronlroth.
 - Agents/memory flush: keep daily memory flush files append-only during embedded attempts so compaction writes do not overwrite earlier notes. (#53725) Thanks @HPluseven.
 
+## 2026.4.2
+
+### Public Release
+
+- 对齐当前不良人增强版的 Control UI，自定义总谱、旅程册、会话册和团队派工状态链路以公开仓为准。
+- 同步最新的天罡任务状态修复，覆盖重新派送、回呈、折损、失联和新局清场等场景。
+- 增加公开仓专用的隐私审计、入口 smoke 和打包前检查，确保对外发布时不携带本地路径、密钥、运行态文件和私人会话数据。
+
 ## 2026.3.28
 
 ### Breaking

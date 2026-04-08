@@ -6,21 +6,21 @@
 
 中文版本：
 
-> 基于 OpenClaw 的公开版增强，重点是上下文治理、结构化记忆和多智能体团队编排。
+> 基于 OpenClaw 的不良人主题公开增强版，重点是上下文治理、结构化记忆和多智能体团队编排。
 
 英文版本：
 
-> Sanitized OpenClaw build focused on context governance, structured memory, and multi-agent team orchestration.
+> Buliangren-themed sanitized OpenClaw build focused on context governance, structured memory, and multi-agent team orchestration.
 
 ## 推荐仓库文案
 
 短版：
 
-> A public OpenClaw build with a custom workspace focused on context management, memory routing, and team workflows.
+> A public Buliangren-themed OpenClaw build with a custom workspace focused on context management, memory routing, and team workflows.
 
 长版：
 
-> This repository packages a runnable OpenClaw distribution together with a sanitized custom workspace layer. The main enhancements focus on context governance, structured memory extraction and routing, and explicit team-based multi-agent workflows.
+> This repository packages a runnable Buliangren-themed OpenClaw distribution together with a sanitized custom workspace layer. The main enhancements focus on context governance, structured memory extraction and routing, and explicit team-based multi-agent workflows.
 
 ## 推荐 topics
 

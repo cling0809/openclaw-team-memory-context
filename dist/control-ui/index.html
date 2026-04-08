@@ -139,15 +139,17 @@
   <body>
     <openclaw-app></openclaw-app>
     <script type="module">
-      const PANEL_ASSET_VERSION = "public-buliang-ui-20260407-ui2026.4.2";
+      const PANEL_ASSET_VERSION = "public-buliang-ui-20260408-ui2026.4.3g";
       const PANEL_SCRIPTS = [
         `./assets/teamTaskStore.js?t=${PANEL_ASSET_VERSION}`,
         `./assets/buli-team-panel.js?t=${PANEL_ASSET_VERSION}`,
+        `./assets/chat-session-enhancer.js?t=${PANEL_ASSET_VERSION}`,
+        `./assets/chat-workbench-enhancer.js?t=${PANEL_ASSET_VERSION}`,
       ];
       const PANEL_STYLE = `./assets/panel-layout-overrides.css?t=${PANEL_ASSET_VERSION}`;
 
       function hasWorkbenchShell() {
-        return !!document.querySelector(".shell, main, aside.right-console");
+        return !!document.querySelector(".shell, main, aside.right-console, .right-console");
       }
 
       function mountPanelAssets() {
