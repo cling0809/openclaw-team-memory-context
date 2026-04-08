@@ -1,6 +1,6 @@
-# OpenClaw Team Memory Context
+# OpenClaw Team Memory Context · 不良人公开版
 
-一个可公开分发的 OpenClaw 完整整理版，重点增强上下文治理、结构化记忆和多智能体团队协作。
+一个可公开分发、可直接运行的 OpenClaw 不良人公开版，围绕上下文治理、结构化记忆、多智能体派工和不良人总谱控制台做了完整整理。
 
 当前公开发行线：`2026.4.2`
 
@@ -180,21 +180,17 @@ pnpm public:dashboard
 
 ## Showcase
 
-### 暗色主题主界面
+### 暗色主题总谱工作台
 
-![OpenClaw dark home](docs/assets/showcase/openclaw-home-dark.png)
+![不良人公开版暗色主题工作台](docs/assets/showcase/openclaw-home-dark.png)
 
-### 浅色主题主界面
+### 浅色主题总谱工作台
 
-![OpenClaw light home](docs/assets/showcase/openclaw-home-light.png)
+![不良人公开版浅色主题工作台](docs/assets/showcase/openclaw-home-light.png)
 
-### 团队派工与任务进展
+### 团队裁断与军令回呈
 
-![OpenClaw team spawn](docs/assets/showcase/openclaw-team-spawn.png)
-
-### 分析报告视图
-
-![OpenClaw analysis report](docs/assets/showcase/openclaw-analysis-report.png)
+![不良人公开版团队裁断与军令回呈](docs/assets/showcase/openclaw-analysis-report.png)
 
 ## 仓库结构
 
