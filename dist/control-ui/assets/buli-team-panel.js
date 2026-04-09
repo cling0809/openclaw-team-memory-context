@@ -1664,6 +1664,10 @@ function firstMeaningfulText(...values) {
   return '';
 }
 
+function pickSessionText(...values) {
+  return firstMeaningfulText(...values);
+}
+
 function collectTextFragmentsDeep(input, out = [], depth = 0, seen = new WeakSet()) {
   if (input == null || depth > 5) return out;
   if (typeof input === 'string') {
@@ -1747,7 +1751,7 @@ function normalizeChatDerivedStatus(text) {
   if (/(折损|失败|出错|报错)/.test(value)) return 'failed';
   if (/(失联|超时)/.test(value)) return 'timed_out';
   if (/(撤令|中止|取消)/.test(value)) return 'aborted';
-  if (/(搜索中|执行中|行令中|研究中|扫描中|汇总中|处理中|进行中|待回传|等回传中)/.test(value)) return 'live';
+  if (/(搜索中|执行中|行令中|研究中|扫描中|汇总中|处理中|进行中|待回传|等回传中|已出发|已遣出|已颁令|已在阵|出击|当前状态|开始(?:扫描|分析|研究|审查|检视|对比|执行)|正在拆解|正在分析)/.test(value)) return 'live';
   if (/(已回呈|已完成|完成|回传|已返回|已结束)/.test(value)) return 'done';
   if (/(候令|待命|待起行|等待)/.test(value)) return 'queued';
   return 'queued';
@@ -1863,6 +1867,22 @@ function extractSpawnResultSessionKey(message) {
   return '';
 }
 
+function parseToolResultJsonObjects(message) {
+  if (!message || typeof message !== 'object' || message.role !== 'toolResult') return [];
+  const blocks = Array.isArray(message.content) ? message.content : [];
+  const objects = [];
+  blocks.forEach((block) => {
+    if (!block || typeof block !== 'object' || block.type !== 'text') return;
+    const text = String(block.text || '').trim();
+    if (!text || !/^\s*\{/.test(text)) return;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object') objects.push(parsed);
+    } catch {}
+  });
+  return objects;
+}
+
 function selectRelevantTeamMessages(messages) {
   const list = Array.isArray(messages) ? messages.filter(Boolean) : [];
   if (list.length === 0) return [];
@@ -1932,6 +1952,9 @@ function deriveTeamStateFromMessageList(messages) {
   let inferredActiveStatus = /(正在并进|分道齐进|等回传中|等待.*回传|搜索中|扫描中|研究中|执行中|行令中|正在拆解|正在分析)/.test(lines.join('\n'))
     ? '行令中'
     : '候令';
+  if (inferredActiveStatus !== '行令中' && /(已出发|已遣出|已颁令|已在阵|当前状态|开始(?:扫描|分析|研究|审查|检视|对比|执行)|出击)/.test(lines.join('\n'))) {
+    inferredActiveStatus = '行令中';
+  }
 
   const isStatusLike = (value) => {
     const text = String(value || '').trim();
@@ -1946,9 +1969,7 @@ function deriveTeamStateFromMessageList(messages) {
     const seat = String(seatLabel || options.seatLabel || '').trim();
     if (!seat) return;
     const agentId = String(options.agentId || resolveAgentIdFromSeatLabel(seat) || '').trim();
-    const isCanonicalSeat = /^天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?$/.test(seat)
-      || /^(?:不良帅|不良帅·李星云(?:（天暗星）)?)$/.test(seat)
-      || !!agentId;
+    const isCanonicalSeat = /^天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?$/.test(seat) || !!agentId;
     if (!isCanonicalSeat) return;
     const key = agentId || seat;
     const prev = childrenByAgent.get(key) || null;
@@ -2026,6 +2047,25 @@ function deriveTeamStateFromMessageList(messages) {
         lockTaskSummary: true,
       });
     }
+  });
+
+  relevantMessages.forEach((msg, messageOrder) => {
+    if (msg?.role !== 'toolResult' || String(msg.toolName || '').trim().toLowerCase() !== 'subagents') return;
+    const payloads = parseToolResultJsonObjects(msg);
+    payloads.forEach((payload) => {
+      const rows = []
+        .concat(Array.isArray(payload?.active) ? payload.active : [])
+        .concat(Array.isArray(payload?.recent) ? payload.recent : []);
+      rows.forEach((row, rowIndex) => {
+        const parsed = parseSpawnTaskDescriptor(row?.task, row?.label);
+        if (!parsed.seatLabel) return;
+        upsertChild(parsed.seatLabel, parsed.taskSummary, String(row?.status || '').trim() || '行令中', messageOrder * 100 + rowIndex, {
+          agentId: parsed.agentId,
+          sessionKey: String(row?.sessionKey || '').trim(),
+          lockTaskSummary: true,
+        });
+      });
+    });
   });
 
   let latestObjectiveLine = '';
@@ -2292,30 +2332,38 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
 
   const merged = baseChildren.map((child) => ({ ...child }));
   const indexByKey = new Map();
+  const indexBySessionKey = new Map();
   merged.forEach((child, index) => {
+    const sessionKey = getSeatSessionKey(child);
     const key = String(child?.agentId || child?.role || child?.sessionKey || '').trim();
+    if (sessionKey) indexBySessionKey.set(sessionKey, index);
     if (key) indexByKey.set(key, index);
   });
 
   nextChildren.forEach((child) => {
+    const sessionKey = getSeatSessionKey(child);
     const mergeKey = String(child?.agentId || child?.role || child?.sessionKey || '').trim();
     if (!mergeKey) {
       merged.push({ ...child });
       return;
     }
-    const existingIndex = indexByKey.get(mergeKey);
+    const existingIndex = sessionKey ? indexBySessionKey.get(sessionKey) : indexByKey.get(mergeKey);
     if (existingIndex == null) {
       indexByKey.set(mergeKey, merged.length);
+      if (sessionKey) indexBySessionKey.set(sessionKey, merged.length);
       merged.push({ ...child });
       return;
     }
 
     const existing = merged[existingIndex] || {};
+    const existingSessionKey = getSeatSessionKey(existing);
+    const sameSession = !!sessionKey && !!existingSessionKey && sessionKey === existingSessionKey;
     const existingStatus = normalizeRunStatus(existing?.status || existing?.runtimeStatus);
     const incomingStatus = normalizeRunStatus(child?.status || child?.runtimeStatus);
     const taskChanged = !!child?.taskSummary && !!existing?.taskSummary && child.taskSummary !== existing.taskSummary;
     const freshRedispatch = ['live', 'queued'].includes(incomingStatus)
       && isTerminalChatStatus(existingStatus)
+      && !sameSession
       && (!!taskChanged || Number(child?.lastActivityAt || 0) >= Number(existing?.lastActivityAt || 0));
     const takeIncomingStatus = isTerminalChatStatus(incomingStatus)
       || (!isTerminalChatStatus(existingStatus) && incomingStatus !== 'idle')
@@ -2341,7 +2389,7 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
     merged[existingIndex] = {
       ...existing,
       ...child,
-      sessionKey: existing.sessionKey || child.sessionKey || '',
+      sessionKey: sessionKey || existing.sessionKey || child.sessionKey || '',
       status: takeIncomingStatus ? (child.status || child.runtimeStatus || existing.status) : existing.status,
       runtimeStatus: takeIncomingStatus ? (child.runtimeStatus || child.status || existing.runtimeStatus) : (existing.runtimeStatus || existing.status),
       taskSummary: useIncomingTask ? child.taskSummary : (existing.taskSummary || child.taskSummary || ''),
@@ -2365,6 +2413,8 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
         Number(child.lastActivityAt || 0),
       ),
     };
+    indexByKey.set(mergeKey, existingIndex);
+    if (sessionKey) indexBySessionKey.set(sessionKey, existingIndex);
   });
 
   return merged;
@@ -2603,6 +2653,13 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
     : Array.isArray(sessionsResult) ? sessionsResult : [];
   const activeSessionAliases = buildScopedSessionAliasSet(sessions, parentSessionKey);
   const relatedChildSessionKeys = new Set(collectScopedChildSessionKeys(sessions, parentSessionKey));
+  const stateSnapshot = teamTaskStore && typeof teamTaskStore.getState === 'function' ? teamTaskStore.getState() : null;
+  const hintedChildren = Array.isArray(stateSnapshot?.children) ? stateSnapshot.children : [];
+  const hintedBySessionKey = new Map();
+  hintedChildren.forEach((child) => {
+    const sessionKey = String(getSeatSessionKey(child) || '').trim();
+    if (sessionKey) hintedBySessionKey.set(sessionKey, child);
+  });
   return sessions.filter(sess => {
     if (!sess?.key || !/:subagent:/.test(sess.key)) return false;
     if (relatedChildSessionKeys.has(String(sess.key || '').trim())) return true;
@@ -2628,15 +2685,18 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
   }).map(sess => {
     const keyStr = String(sess.key || '');
     const agentMatch = keyStr.match(/^agent:([^:]+):subagent:/i);
+    const hinted = hintedBySessionKey.get(keyStr) || null;
     const agentId =
       pickSessionText(
+        hinted?.agentId,
+        hinted?.role,
         sess.agentId,
         sess.agent,
         sess.assistantAgentId,
         sess.ownerAgentId,
         sess.assistantId,
       ) ||
-      agentMatch?.[1] ||
+      (agentMatch?.[1] && agentMatch[1] !== 'main' ? agentMatch[1] : '') ||
       pickSessionText(sess.role) ||
       'unknown';
     return {
@@ -2645,8 +2705,17 @@ function discoverChildrenFromSessions(sessionsResult, parentSessionKey) {
       key: keyStr,
       status: sess.status || 'unknown',
       runtimeStatus: sess.status || 'unknown',
-      taskSummary: sess.taskSummary || sess.task || sess.title || sess.objective || sess.description || '',
-      summary: sess.summary || sess.resultDigest || '',
+      taskSummary: pickSessionText(
+        hinted?.taskSummary,
+        hinted?.task,
+        hinted?.summary,
+        sess.taskSummary,
+        sess.task,
+        sess.title,
+        sess.objective,
+        sess.description,
+      ),
+      summary: pickSessionText(hinted?.summary, sess.summary, sess.resultDigest),
       label: sess.label || sess.displayName || '',
       lastActivityAt: sess.updatedAt || sess.endedAt || sess.createdAt || Date.now(),
       _discoveredFromSessions: true,
@@ -3489,11 +3558,13 @@ async function mountPanel() {
         if (syncFromSessions) {
           try {
             const scopedChildSessionKeys = collectScopedChildSessionKeys(result, app.sessionKey);
+            const refreshChatDerived = deriveTeamStateFromChatMessages(app);
             syncFromSessions(result, {
               activeSessionKey: app.sessionKey,
               activeChildSessionKeys: sessionRolled
                 ? []
                 : [...new Set([...collectActiveChildSessionKeys(orchestrationResult), ...scopedChildSessionKeys])],
+              hintedChildren: refreshChatDerived?.children || [],
             });
           } catch(e) { /* 静默 */ }
         }
@@ -3607,10 +3678,24 @@ async function mountPanel() {
       );
       const mergedDerivedChildren = mergeChatDerivedChildren(s?.children || [], chatDerived.children || []);
       const derivedHasTerminal = mergedDerivedChildren.some((child) => isTerminalChatStatus(child?.status || child?.runtimeStatus));
+      const derivedImprovesIdentity = (chatDerived.children || []).some((child) => {
+        const sessionKey = getSeatSessionKey(child);
+        if (!sessionKey) return false;
+        const existing = (s?.children || []).find((candidate) => getSeatSessionKey(candidate) === sessionKey) || null;
+        const incomingAgent = String(child?.agentId || child?.role || '').trim();
+        const existingAgent = String(existing?.agentId || existing?.role || '').trim();
+        const incomingTask = firstMeaningfulText(child?.taskSummary, child?.task);
+        const existingTask = firstMeaningfulText(existing?.taskSummary, existing?.task);
+        return (
+          (incomingAgent && incomingAgent !== 'main' && incomingAgent !== 'unknown' && (!existingAgent || existingAgent === 'main' || existingAgent === 'unknown')) ||
+          (!!incomingTask && !isGenericDerivedTask(incomingTask) && (!existingTask || isGenericDerivedTask(existingTask)))
+        );
+      });
       const shouldHydrateFromChat =
         !hasStoreContext ||
         (chatDerived.children?.length || 0) > (s?.children?.length || 0) ||
         derivedHasTerminal ||
+        derivedImprovesIdentity ||
         (!String(s?.objective || s?.currentObjectiveDigest || '').trim() && String(chatDerived.objective || chatDerived.currentObjectiveDigest || '').trim());
       if (shouldHydrateFromChat) {
         const nextChildren = mergeChatDerivedChildren(s?.children || [], chatDerived.children || []);
@@ -3754,6 +3839,7 @@ async function mountPanel() {
             activeChildSessionKeys: (sessionRolled || blankFreshSession)
               ? []
               : [...new Set([...collectActiveChildSessionKeys(orchestrationResult), ...scopedChildSessionKeys])],
+            hintedChildren: chatDerived?.children || [],
           });
         } catch(e) { /* store 未初始化，静默跳过 */ }
       }

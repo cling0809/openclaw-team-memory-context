@@ -929,7 +929,43 @@ function isSubagentSession(sess) {
   return CHILD_SESSION_RE.test(key) || kind === 'subagent' || role === 'subagent';
 }
 
-function deriveSessionAgentId(sess) {
+const SUBAGENT_LABEL_AGENT_HINTS = [
+  { pattern: /(huiming|慧明|天慧星)/i, agentId: 'agent:天慧星' },
+  { pattern: /(shiyao|石瑶|天祐星)/i, agentId: 'agent:天祐星' },
+  { pattern: /(jingxinmo|镜心魔|天罪星|reviewer)/i, agentId: 'agent:天罪星' },
+  { pattern: /(wentao|温韬|天捷星|\bdev\b)/i, agentId: 'agent:天捷星' },
+  { pattern: /(duanchengtian|段成天|天速星|code-assist)/i, agentId: 'agent:天速星' },
+  { pattern: /(shangguanyunque|上官云阙|天巧星|frontend)/i, agentId: 'agent:天巧星' },
+  { pattern: /(luyoujie|陆佑劫|天损星|\bqa\b)/i, agentId: 'agent:天损星' },
+  { pattern: /(yuantiangang|袁天罡|天魁星|天罡星)/i, agentId: 'agent:天魁星' },
+];
+
+function resolveRosterAgentId(...values) {
+  for (const value of values.flat()) {
+    const text = normalizeSessionText(value);
+    if (!text) continue;
+    const direct = getRosterEntry(text);
+    if (direct?.agentId) return direct.agentId;
+    const lower = text.toLowerCase();
+    const fuzzy = Object.entries(BU_LIANG_ROSTER).find(([, entry]) => {
+      const candidates = [
+        entry?.agentId,
+        entry?.seatId,
+        entry?.displayName,
+        entry?.fullTitle,
+      ]
+        .map((candidate) => normalizeSessionText(candidate).toLowerCase())
+        .filter(Boolean);
+      return candidates.some((candidate) => lower.includes(candidate));
+    });
+    if (fuzzy?.[1]?.agentId) return fuzzy[1].agentId;
+    const hinted = SUBAGENT_LABEL_AGENT_HINTS.find((item) => item.pattern.test(lower));
+    if (hinted?.agentId) return hinted.agentId;
+  }
+  return '';
+}
+
+function deriveSessionAgentId(sess, hint = '') {
   const explicit = pickSessionText(
     sess?.agentId,
     sess?.agent,
@@ -937,11 +973,27 @@ function deriveSessionAgentId(sess) {
     sess?.ownerAgentId,
     sess?.assistantId,
   );
-  if (explicit) return explicit;
+  const explicitMapped = resolveRosterAgentId(explicit);
+  if (explicitMapped) return explicitMapped;
+  if (explicit && explicit !== 'main' && explicit !== 'subagent') return explicit;
   const key = String(sess?.key || '');
   const match = key.match(/^agent:([^:]+):subagent:/i);
-  if (match?.[1]) return match[1];
+  if (match?.[1] && match[1] !== 'main') {
+    return resolveRosterAgentId(match[1]) || match[1];
+  }
   const role = pickSessionText(sess?.role);
+  const hinted = resolveRosterAgentId(
+    hint,
+    sess?.label,
+    sess?.displayName,
+    sess?.taskSummary,
+    sess?.task,
+    sess?.title,
+    sess?.description,
+    sess?.objective,
+    role,
+  );
+  if (hinted) return hinted;
   return role && role !== 'subagent' ? role : 'unknown';
 }
 
@@ -1105,6 +1157,9 @@ function syncFromSessions(sessionsInput, options = {}) {
         .map((key) => String(key || '').trim())
         .filter(Boolean)
     : [];
+  const hintedChildren = Array.isArray(syncOptions.hintedChildren)
+    ? syncOptions.hintedChildren.filter(Boolean)
+    : [];
   teamTaskStore.setState(s => {
     const now = Date.now();
     const timelineAdditions = [];
@@ -1147,6 +1202,11 @@ function syncFromSessions(sessionsInput, options = {}) {
       ...relatedChildSessionKeys,
     ]);
     const activeSessionAliases = buildScopedSessionAliasSet(sessions, resolvedSessionKey);
+    const hintedBySessionKey = new Map();
+    hintedChildren.forEach((child) => {
+      const sessionKey = String(child?.sessionKey || '').trim();
+      if (sessionKey) hintedBySessionKey.set(sessionKey, child);
+    });
     const childBelongsToActiveSession = (sess) => {
       const parentCandidates = buildSessionAliasSet([
         sess?.spawnedBy,
@@ -1221,10 +1281,26 @@ function syncFromSessions(sessionsInput, options = {}) {
     const updatedChildren = childSessions.map(sess => {
       const currStatus = normalizeStatus(sess.status);
       const existing = baseState.children.find(c => c.sessionKey === sess.key);
-      const agentId = existing?.agentId || deriveSessionAgentId(sess);
-      const role = pickSessionText(sess?.role, existing?.role, agentId);
-      const taskSummary = deriveSessionTaskSummary(sess, existing?.taskSummary);
-      const summary = deriveSessionSummary(sess, existing?.summary);
+      const hinted = hintedBySessionKey.get(String(sess?.key || '').trim()) || null;
+      const existingAgentId = pickSessionText(existing?.agentId);
+      const hintedAgentId = pickSessionText(hinted?.agentId, hinted?.role);
+      const agentId = pickSessionText(
+        existingAgentId && existingAgentId !== 'main' && existingAgentId !== 'unknown' ? existingAgentId : '',
+        hintedAgentId && hintedAgentId !== 'main' && hintedAgentId !== 'unknown' ? hintedAgentId : '',
+        resolveRosterAgentId(
+          sess?.label,
+          sess?.displayName,
+          sess?.taskSummary,
+          sess?.task,
+          sess?.title,
+          sess?.description,
+          sess?.objective,
+        ),
+        deriveSessionAgentId(sess, hintedAgentId),
+      ) || 'unknown';
+      const role = pickSessionText(hinted?.role, sess?.role, existing?.role, agentId);
+      const taskSummary = deriveSessionTaskSummary(sess, pickSessionText(hinted?.taskSummary, hinted?.task, existing?.taskSummary));
+      const summary = deriveSessionSummary(sess, pickSessionText(hinted?.summary, existing?.summary));
       const lastActivityAt = deriveSessionUpdatedAt(sess, existing?.lastActivityAt || now);
       if (existing) {
         // failed / timed_out / aborted 也要更新进来，不保留旧状态
