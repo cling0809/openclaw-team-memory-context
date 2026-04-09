@@ -659,15 +659,20 @@ function patchSendPipeline(app) {
     } else {
       clearTeamEnforcement();
     }
-    // The original handleSendChat only clears chatMessage when messageOverride is null/undefined.
     // In team mode, nextMessageOverride is always a string (the dispatch-wrapped version),
-    // so we must explicitly clear here. Only clear when nextMessageOverride was built from
-    // this.chatMessage (i.e., nextMessageOverride != messageOverride originally passed in).
+    // so the original's null-guard clearing never triggers. We must clear synchronously
+    // BEFORE the RPC call so the input visually clears immediately (Lit re-renders on
+    // property change). The .finally() is a safety net for any late property writes.
     const shouldClear = typeof nextMessageOverride === "string" && nextMessageOverride && nextMessageOverride !== messageOverride;
+    if (shouldClear) {
+      this.chatMessage = "";
+      this.chatAttachments = [];
+    }
     return original.call(this, nextMessageOverride, opts).finally(() => {
+      // Safety net: ensure cleared even if original writes chatMessage after we cleared.
       if (shouldClear) {
-        this.chatMessage = "";
-        this.chatAttachments = [];
+        if (this.chatMessage) this.chatMessage = "";
+        if (this.chatAttachments?.length) this.chatAttachments = [];
       }
     });
   };

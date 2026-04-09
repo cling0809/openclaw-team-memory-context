@@ -2,6 +2,7 @@
  * teamTaskStore.js — 不良人总谱 · 团队状态仓
  * 
  * 替代 inferTeamState() 的文本猜测，用真实 runtime 状态驱动右栏。
+ * Tranche 15: seen children 失联阈值 90s → 3min（与后端 10min watchdog 对齐）
  * 模式参考：Claude Code src/state/store.ts（Set<Listener> + Object.is）
  * 
  * 使用方式：
@@ -1435,8 +1436,10 @@ function syncFromSessions(sessionsInput, options = {}) {
       const seenInSessions = Boolean(child?._seenInSessions);
       const recentlySeen = lastSeenAt > 0 && (now - lastSeenAt) < 15000;
       const missingForMs = now - firstMissingAt;
-      const requiredMissingMs = seenInSessions ? 90000 : 5 * 60 * 1000;
-      const requiredMissingRounds = seenInSessions ? 6 : 30;
+      // seenInSessions: 等待 3 分钟（后端 watchdog 是 10 分钟，给足够缓冲）
+      // 未 seen: 保持 5 分钟
+      const requiredMissingMs = seenInSessions ? 3 * 60 * 1000 : 5 * 60 * 1000;
+      const requiredMissingRounds = seenInSessions ? 22 : 30;
       const shouldPromoteTerminal = !recentlySeen
         && missingRounds >= requiredMissingRounds
         && missingForMs >= requiredMissingMs;
