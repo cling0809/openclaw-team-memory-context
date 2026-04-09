@@ -2358,6 +2358,8 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
     const existing = merged[existingIndex] || {};
     const existingSessionKey = getSeatSessionKey(existing);
     const sameSession = !!sessionKey && !!existingSessionKey && sessionKey === existingSessionKey;
+    const incomingHasSessionKey = !!sessionKey;
+    const existingHasSessionKey = !!existingSessionKey;
     const existingStatus = normalizeRunStatus(existing?.status || existing?.runtimeStatus);
     const incomingStatus = normalizeRunStatus(child?.status || child?.runtimeStatus);
     const taskChanged = !!child?.taskSummary && !!existing?.taskSummary && child.taskSummary !== existing.taskSummary;
@@ -2365,9 +2367,12 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
       && isTerminalChatStatus(existingStatus)
       && !sameSession
       && (!!taskChanged || Number(child?.lastActivityAt || 0) >= Number(existing?.lastActivityAt || 0));
-    const takeIncomingStatus = isTerminalChatStatus(incomingStatus)
+    // 一旦 store 已经拿到了真实 sessionKey，就以 sessions.list 为状态权威；
+    // 聊天推导只允许补 task/seat，不再用“旧回呈/旧失联”把当前执行态冲掉。
+    const statusAuthorityLocked = existingHasSessionKey && !incomingHasSessionKey && existingStatus !== 'idle';
+    const takeIncomingStatus = !statusAuthorityLocked && (isTerminalChatStatus(incomingStatus)
       || (!isTerminalChatStatus(existingStatus) && incomingStatus !== 'idle')
-      || freshRedispatch;
+      || freshRedispatch);
     const useIncomingTask = !!child?.taskSummary && (
       !existing?.taskSummary ||
       isGenericDerivedTask(existing.taskSummary) ||
@@ -2428,12 +2433,13 @@ function getTrackedChildActivity(child) {
 function getChildDisplayStatus(child) {
   const tracked = getTrackedChildActivity(child);
   const explicit = normalizeRunStatus(child?.status || child?.runtimeStatus);
+  const trackedStatus = normalizeRunStatus(tracked?.status);
   if (['done', 'failed', 'timed_out', 'aborted'].includes(explicit)) return explicit;
-  if (tracked && ['done', 'failed', 'timed_out', 'aborted'].includes(tracked.status)) return tracked.status;
-  if (tracked?.status === 'live') return 'live';
   if (explicit === 'live') return 'live';
-  if (tracked?.status === 'queued') return 'queued';
-  return explicit !== 'idle' ? explicit : normalizeRunStatus(tracked?.status);
+  if (trackedStatus === 'live') return 'live';
+  if (explicit === 'queued') return 'queued';
+  if (trackedStatus === 'queued') return 'queued';
+  return explicit !== 'idle' ? explicit : 'queued';
 }
 
 function getChildTaskText(child, status = getChildDisplayStatus(child)) {
@@ -3676,8 +3682,15 @@ async function mountPanel() {
         String(s?.objective || '').trim() ||
         String(s?.currentObjectiveDigest || '').trim(),
       );
+      const storeHasSessionBackedChildren = Array.isArray(s?.children)
+        && s.children.some((child) => String(getSeatSessionKey(child) || '').trim());
       const mergedDerivedChildren = mergeChatDerivedChildren(s?.children || [], chatDerived.children || []);
       const derivedHasTerminal = mergedDerivedChildren.some((child) => isTerminalChatStatus(child?.status || child?.runtimeStatus));
+      const derivedAddsSessionBackedChild = (chatDerived.children || []).some((child) => {
+        const sessionKey = String(getSeatSessionKey(child) || '').trim();
+        if (!sessionKey) return false;
+        return !(s?.children || []).some((candidate) => String(getSeatSessionKey(candidate) || '').trim() === sessionKey);
+      });
       const derivedImprovesIdentity = (chatDerived.children || []).some((child) => {
         const sessionKey = getSeatSessionKey(child);
         if (!sessionKey) return false;
@@ -3693,8 +3706,9 @@ async function mountPanel() {
       });
       const shouldHydrateFromChat =
         !hasStoreContext ||
+        derivedAddsSessionBackedChild ||
         (chatDerived.children?.length || 0) > (s?.children?.length || 0) ||
-        derivedHasTerminal ||
+        (!storeHasSessionBackedChildren && derivedHasTerminal) ||
         derivedImprovesIdentity ||
         (!String(s?.objective || s?.currentObjectiveDigest || '').trim() && String(chatDerived.objective || chatDerived.currentObjectiveDigest || '').trim());
       if (shouldHydrateFromChat) {

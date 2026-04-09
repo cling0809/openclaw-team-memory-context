@@ -1426,7 +1426,9 @@ function syncFromSessions(sessionsInput, options = {}) {
 
       const missingRounds = Math.max(0, Number(child?._missingRounds || 0)) + 1;
       const summaryText = pickSessionText(child?.summary, child?.resultDigest);
-      const shouldPromoteTerminal = missingRounds >= 2;
+      const lastSeenAt = Math.max(0, Number(child?.lastActivityAt || 0));
+      const recentlySeen = lastSeenAt > 0 && (now - lastSeenAt) < 6500;
+      const shouldPromoteTerminal = !recentlySeen && missingRounds >= 3;
       if (!shouldPromoteTerminal) {
         return [{ ...child, _missingRounds: missingRounds }];
       }
