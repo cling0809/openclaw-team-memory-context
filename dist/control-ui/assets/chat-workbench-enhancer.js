@@ -1,14 +1,12 @@
 import { teamTaskStore, pushTimelineEvent } from "./teamTaskStore.js";
 
-const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409d";
+const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409e";
 const COMPOSER_MODE_KEY = "openclaw:workbench:composer-mode:v1";
 const DEFAULT_MODE = "agent";
 const VALID_MODES = new Set(["agent", "team"]);
 const RESET_COMMAND_RE = /^\/(?:new|reset)\b/i;
 const TEAM_ENFORCEMENT_MARKER = "【TEAM_MODE_ENFORCEMENT】";
 const TEAM_ENFORCEMENT_GRACE_MS = 1400;
-const TEAM_DISPATCH_EVIDENCE_RE =
-  /(sessions_spawn|子代理|子会话|天罡|分身|派工|分派|军令|分道齐进|并进|协作席位|回呈|回传|评审完毕|汇总完毕|裁断结束)/i;
 
 const STATE = {
   mode: readStoredMode(),
@@ -329,29 +327,103 @@ function getMessageTimestamp(message) {
   return 0;
 }
 
+function collectAppMessages(app) {
+  const entries = [];
+  let sequence = 0;
+  const appendMessages = (messages) => {
+    if (!Array.isArray(messages)) {
+      return;
+    }
+    messages.forEach((message) => {
+      if (!message || typeof message !== "object") {
+        return;
+      }
+      entries.push({
+        message,
+        sequence: sequence++,
+        timestamp: getMessageTimestamp(message),
+      });
+    });
+  };
+  appendMessages(app?.chatMessages);
+  appendMessages(app?.chatToolMessages);
+  entries.sort((left, right) => {
+    const leftTs = Number(left?.timestamp || 0);
+    const rightTs = Number(right?.timestamp || 0);
+    if (leftTs !== rightTs) {
+      return leftTs - rightTs;
+    }
+    return Number(left?.sequence || 0) - Number(right?.sequence || 0);
+  });
+  return entries.map((entry) => entry.message);
+}
+
+function isSpawnToolCallBlock(block) {
+  if (!block || typeof block !== "object" || block.type !== "toolCall") {
+    return false;
+  }
+  const name = String(block.name || "").trim().toLowerCase();
+  if (name === "sessions_spawn") {
+    return true;
+  }
+  if (name !== "subagents") {
+    return false;
+  }
+  const action = normalizeText(block.arguments?.action).toLowerCase();
+  return action === "spawn";
+}
+
+function extractTextBlocks(message) {
+  if (!message || typeof message !== "object") {
+    return "";
+  }
+  const blocks = Array.isArray(message.content) ? message.content : [];
+  return blocks
+    .filter((block) => block && typeof block === "object" && block.type === "text")
+    .map((block) => normalizeText(block.text))
+    .filter(Boolean)
+    .join("\n");
+}
+
+function hasSpawnAcceptanceText(text) {
+  const value = normalizeText(text);
+  if (!value) {
+    return false;
+  }
+  if (/childSessionKey/i.test(value)) {
+    return true;
+  }
+  if (/"status"\s*:\s*"accepted"/i.test(value)) {
+    return true;
+  }
+  if (/"action"\s*:\s*"spawn"/i.test(value) && /"status"\s*:\s*"ok"/i.test(value)) {
+    return true;
+  }
+  return false;
+}
+
 function hasStructuredDispatchEvidence(app, sinceTs = 0) {
-  const messages = Array.isArray(app?.chatMessages) ? app.chatMessages : [];
+  const messages = collectAppMessages(app);
   for (const message of messages) {
     const timestamp = getMessageTimestamp(message);
     if (sinceTs > 0 && timestamp > 0 && timestamp + 50 < sinceTs) {
       continue;
     }
-    if (Array.isArray(message?.content) && message.content.some((block) => (
-      block &&
-      typeof block === "object" &&
-      block.type === "toolCall" &&
-      /^sessions_spawn$/i.test(String(block.name || "").trim())
-    ))) {
+    if (Array.isArray(message?.content) && message.content.some(isSpawnToolCallBlock)) {
       return true;
     }
     if (message?.role === "toolResult") {
-      const contentText = Array.isArray(message.content)
-        ? message.content
-            .filter((block) => block && typeof block === "object" && block.type === "text")
-            .map((block) => normalizeText(block.text))
-            .join("\n")
-        : "";
-      if (/childSessionKey/i.test(contentText) || /"status"\s*:\s*"accepted"/i.test(contentText)) {
+      const toolName = normalizeText(message.toolName).toLowerCase();
+      const contentText = extractTextBlocks(message);
+      if (
+        toolName === "sessions_spawn" ||
+        (toolName === "subagents" && /"action"\s*:\s*"spawn"/i.test(contentText))
+      ) {
+        if (hasSpawnAcceptanceText(contentText)) {
+          return true;
+        }
+      }
+      if (hasSpawnAcceptanceText(contentText)) {
         return true;
       }
     }
@@ -413,10 +485,7 @@ function hasTeamDispatchEvidence(app, sinceTs = 0) {
   if (hasScopedTeamChildren(app)) {
     return true;
   }
-  if (hasStructuredDispatchEvidence(app, sinceTs)) {
-    return true;
-  }
-  return TEAM_DISPATCH_EVIDENCE_RE.test(collectRecentAssistantSurfaceText());
+  return hasStructuredDispatchEvidence(app, sinceTs);
 }
 
 function buildTeamEnforcementMessage(originalMessage) {
@@ -425,7 +494,7 @@ function buildTeamEnforcementMessage(originalMessage) {
     TEAM_ENFORCEMENT_MARKER,
     "你当前处于 Agent Team 强制模式。",
     "上一轮没有先实际派出任何子代理，已违反团队模式。",
-    "现在必须重新执行：先使用 sessions_spawn 派出至少 1 名子代理；复杂任务默认派出 2-3 名并明确分工。",
+    "现在必须重新执行：先实际派出至少 1 名子代理（如 sessions_spawn 或 subagents spawn）；复杂任务默认派出 2-3 名并明确分工。",
     "在出现实际派工结果前，不得直接给出最终结论、总结或单兵完成答案。",
     "",
     "原始用户任务：",

@@ -1735,6 +1735,35 @@ function normalizeChatDerivedStatus(text) {
   return 'queued';
 }
 
+function isSpawnToolCallBlock(block) {
+  if (!block || typeof block !== 'object' || block.type !== 'toolCall') return false;
+  const name = String(block.name || '').trim().toLowerCase();
+  if (name === 'sessions_spawn') return true;
+  if (name !== 'subagents') return false;
+  const action = String(block.arguments?.action || '').trim().toLowerCase();
+  return action === 'spawn';
+}
+
+function getSpawnBlockTask(block) {
+  if (!block || typeof block !== 'object') return '';
+  return String(
+    block.arguments?.task ||
+    block.arguments?.prompt ||
+    block.arguments?.message ||
+    '',
+  ).trim();
+}
+
+function getSpawnBlockLabel(block) {
+  if (!block || typeof block !== 'object') return '';
+  return String(
+    block.arguments?.label ||
+    block.arguments?.agentId ||
+    block.arguments?.agent ||
+    '',
+  ).trim();
+}
+
 const CHAT_TEAM_SIGNAL_RE = /(sessions_spawn|sessions_yield|天罡|子代理|子会话|派工|分派|军令|分道齐进|并进|回呈|回传|超时|失联|折损|扫描|研究|评审|汇总)/;
 const CHAT_TEAM_ENFORCEMENT_MARKER = "【TEAM_MODE_ENFORCEMENT】";
 const CHAT_SEAT_RE = /(不良帅(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?|天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?)/g;
@@ -1783,9 +1812,7 @@ function isMeaningfulUserObjectiveMessage(message) {
 
 function messageHasTeamSignal(message) {
   if (!message || typeof message !== 'object') return false;
-  if (Array.isArray(message.content) && message.content.some((block) => (
-    block && typeof block === 'object' && block.type === 'toolCall' && /^sessions_spawn$/i.test(String(block.name || '').trim())
-  ))) {
+  if (Array.isArray(message.content) && message.content.some(isSpawnToolCallBlock)) {
     return true;
   }
   const text = collectRenderableTextFragments(message, [])
@@ -1898,9 +1925,7 @@ function deriveTeamStateFromMessageList(messages) {
     collectRenderableTextFragments(msg, textPool);
   });
   const joinedText = textPool.join('\n');
-  const hasSpawnToolCall = relevantMessages.some((msg) => Array.isArray(msg?.content) && msg.content.some((block) => (
-    block && typeof block === 'object' && block.type === 'toolCall' && /^sessions_spawn$/i.test(String(block.name || '').trim())
-  )));
+  const hasSpawnToolCall = relevantMessages.some((msg) => Array.isArray(msg?.content) && msg.content.some(isSpawnToolCallBlock));
   if (!CHAT_TEAM_SIGNAL_RE.test(joinedText) && !hasSpawnToolCall) {
     return null;
   }
@@ -1976,7 +2001,7 @@ function deriveTeamStateFromMessageList(messages) {
       ? (prev?.taskSummary || prev?.task || task)
       : (task || prev?.taskSummary || prev?.task || '');
     const derivedTerminalSummary = nextStatus === 'done' ? mergedTask : '';
-    const derivedTerminalError = ['failed', 'timed_out', 'aborted'].includes(nextStatus)
+      const derivedTerminalError = ['failed', 'timed_out', 'aborted'].includes(nextStatus)
       ? compactText(statusTextNorm || mergedTask || '', 160)
       : '';
     const incomingLastActivityAt = Math.max(
@@ -2009,12 +2034,11 @@ function deriveTeamStateFromMessageList(messages) {
   relevantMessages.forEach((msg, messageOrder) => {
     if (Array.isArray(msg?.content)) {
       msg.content.forEach((block, blockIndex) => {
-        if (!block || typeof block !== 'object') return;
-        if (block.type !== 'toolCall' || !/^sessions_spawn$/i.test(String(block.name || '').trim())) return;
-        const parsed = parseSpawnTaskDescriptor(block.arguments?.task, block.arguments?.label);
+        if (!isSpawnToolCallBlock(block)) return;
+        const parsed = parseSpawnTaskDescriptor(getSpawnBlockTask(block), getSpawnBlockLabel(block));
         if (!parsed.seatLabel) return;
         const order = messageOrder * 100 + blockIndex;
-        upsertChild(parsed.seatLabel, parsed.taskSummary, '候令', order, {
+        upsertChild(parsed.seatLabel, parsed.taskSummary, '已出发', order, {
           agentId: parsed.agentId,
           lockTaskSummary: true,
           lastActivityAt: normalizeMessageTimestamp(msg, 0),
@@ -2029,7 +2053,7 @@ function deriveTeamStateFromMessageList(messages) {
       const pending = pendingSpawnByCallId.get(String(msg.toolCallId || '').trim());
       if (!pending) return;
       const childSessionKey = extractSpawnResultSessionKey(msg);
-      upsertChild(pending.seatLabel, pending.taskSummary, '候令', pending.order, {
+      upsertChild(pending.seatLabel, pending.taskSummary, '已出发', pending.order, {
         agentId: pending.agentId,
         sessionKey: childSessionKey || '',
         lockTaskSummary: true,
@@ -2360,7 +2384,14 @@ function mergeChatDerivedChildren(prevChildren, derivedChildren) {
       && (!!taskChanged || Number(child?.lastActivityAt || 0) >= Number(existing?.lastActivityAt || 0));
     // 一旦 store 已经拿到了真实 sessionKey，就以 sessions.list 为状态权威；
     // 聊天推导只允许补 task/seat，不再用“旧回呈/旧失联”把当前执行态冲掉。
-    const statusAuthorityLocked = existingHasSessionKey && !incomingHasSessionKey && existingStatus !== 'idle';
+    const canPromoteQueuedToLive = existingHasSessionKey
+      && !incomingHasSessionKey
+      && existingStatus === 'queued'
+      && incomingStatus === 'live';
+    const statusAuthorityLocked = existingHasSessionKey
+      && !incomingHasSessionKey
+      && existingStatus !== 'idle'
+      && !canPromoteQueuedToLive;
     const takeIncomingStatus = !statusAuthorityLocked && (isTerminalChatStatus(incomingStatus)
       || (!isTerminalChatStatus(existingStatus) && incomingStatus !== 'idle')
       || freshRedispatch);
