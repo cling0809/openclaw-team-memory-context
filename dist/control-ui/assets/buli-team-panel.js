@@ -1927,6 +1927,10 @@ function deriveTeamStateFromMessageList(messages) {
     .map((line) => String(line || '').replace(/\s+/g, ' ').trim())
     .filter(Boolean);
   const lines = allLines.slice(-180);
+  const newestRelevantTs = relevantMessages.reduce(
+    (max, msg) => Math.max(max, normalizeMessageTimestamp(msg, 0)),
+    0,
+  );
   let inferredActiveStatus = /(正在并进|分道齐进|等回传中|等待.*回传|搜索中|扫描中|研究中|执行中|行令中|正在拆解|正在分析)/.test(lines.join('\n'))
     ? '行令中'
     : '候令';
@@ -1975,6 +1979,11 @@ function deriveTeamStateFromMessageList(messages) {
     const derivedTerminalError = ['failed', 'timed_out', 'aborted'].includes(nextStatus)
       ? compactText(statusTextNorm || mergedTask || '', 160)
       : '';
+    const incomingLastActivityAt = Math.max(
+      0,
+      Number(options.lastActivityAt || 0),
+      Number(prev?.lastActivityAt || 0),
+    );
     childrenByAgent.set(key, {
       ...(prev || {}),
       agentId: agentId || seat,
@@ -1988,7 +1997,7 @@ function deriveTeamStateFromMessageList(messages) {
       resultDigest: nextStatus === 'done' ? (prev?.resultDigest || '') : '',
       error: nextIsTerminal ? (derivedTerminalError || prev?.error || '') : '',
       runtimeStatus: mergedStatus,
-      lastActivityAt: Date.now(),
+      lastActivityAt: incomingLastActivityAt,
       _derivedFromChat: true,
       _lockTaskSummary: Boolean(prev?._lockTaskSummary || options.lockTaskSummary),
       _statusOrder: shouldTakeStatus ? order : Number(prev?._statusOrder || order),
@@ -2008,6 +2017,7 @@ function deriveTeamStateFromMessageList(messages) {
         upsertChild(parsed.seatLabel, parsed.taskSummary, '候令', order, {
           agentId: parsed.agentId,
           lockTaskSummary: true,
+          lastActivityAt: normalizeMessageTimestamp(msg, 0),
         });
         pendingSpawnByCallId.set(String(block.id || `${messageOrder}:${blockIndex}`), {
           ...parsed,
@@ -2023,6 +2033,7 @@ function deriveTeamStateFromMessageList(messages) {
         agentId: pending.agentId,
         sessionKey: childSessionKey || '',
         lockTaskSummary: true,
+        lastActivityAt: normalizeMessageTimestamp(msg, 0),
       });
     }
   });
@@ -2041,6 +2052,7 @@ function deriveTeamStateFromMessageList(messages) {
           agentId: parsed.agentId,
           sessionKey: String(row?.sessionKey || '').trim(),
           lockTaskSummary: true,
+          lastActivityAt: normalizeMessageTimestamp(msg, 0),
         });
       });
     });
@@ -2070,28 +2082,28 @@ function deriveTeamStateFromMessageList(messages) {
       const secondLooksStatus = isStatusLike(second);
       const thirdLooksStatus = isStatusLike(third);
       if (!secondLooksStatus && thirdLooksStatus) {
-        upsertChild(seatLabel, second, third, order);
+        upsertChild(seatLabel, second, third, order, { lastActivityAt: newestRelevantTs });
         return;
       }
       if (secondLooksStatus && !thirdLooksStatus) {
-        upsertChild(seatLabel, third, second, order);
+        upsertChild(seatLabel, third, second, order, { lastActivityAt: newestRelevantTs });
         return;
       }
       if (/^(research|reviewer|coder|qa|frontend|developer|dev|main)$/i.test(second) && third) {
-        upsertChild(seatLabel, third, inferredActiveStatus, order);
+        upsertChild(seatLabel, third, inferredActiveStatus, order, { lastActivityAt: newestRelevantTs });
         return;
       }
       if (third) {
-        upsertChild(seatLabel, second, thirdLooksStatus ? third : inferredActiveStatus, order);
+        upsertChild(seatLabel, second, thirdLooksStatus ? third : inferredActiveStatus, order, { lastActivityAt: newestRelevantTs });
         return;
       }
-      upsertChild(seatLabel, second, inferredActiveStatus, order);
+      upsertChild(seatLabel, second, inferredActiveStatus, order, { lastActivityAt: newestRelevantTs });
       return;
     }
 
     const arrowMatch = line.match(/(?:^|[•●\-🔵⚪]\s*)((?:天[\u4e00-\u9fff]{1,3}星|不良帅)[^\s>：:]{0,16})\s*(?:->|→|：|:)\s*([^()]{2,80})/);
     if (arrowMatch) {
-      upsertChild(arrowMatch[1].trim(), arrowMatch[2].trim(), inferredActiveStatus, order);
+      upsertChild(arrowMatch[1].trim(), arrowMatch[2].trim(), inferredActiveStatus, order, { lastActivityAt: newestRelevantTs });
       return;
     }
 
@@ -2117,6 +2129,7 @@ function deriveTeamStateFromMessageList(messages) {
           taskText,
           hasExplicitStatus ? line : inferredActiveStatus,
           order,
+          { lastActivityAt: newestRelevantTs },
         );
       });
     }
@@ -3492,6 +3505,8 @@ async function mountPanel() {
   let prevSessionKey = "";
   let prevRunId = "";
   let lastInteractiveAt = 0;
+  let mountedAt = Date.now();
+  let hasSeenHydratedHistory = false;
   let tickInFlight = false;
   let tickQueued = false;
   const eventsRendered = { current: false };
@@ -3716,8 +3731,18 @@ async function mountPanel() {
       sending: app.chatSending,
       runId: app.chatRunId,
       messageCount: Array.isArray(app.chatMessages) ? app.chatMessages.length : 0,
+      toolMessageCount: Array.isArray(app.chatToolMessages) ? app.chatToolMessages.length : 0,
     };
-    const blankFreshSession = signatureState.messageCount === 0 && !signatureState.sending && !signatureState.runId;
+    if ((signatureState.messageCount + signatureState.toolMessageCount) > 0) {
+      hasSeenHydratedHistory = true;
+    }
+    const coldBootWindow = (now - mountedAt) < 15000;
+    const blankFreshSession = !coldBootWindow
+      && hasSeenHydratedHistory
+      && signatureState.messageCount === 0
+      && signatureState.toolMessageCount === 0
+      && !signatureState.sending
+      && !signatureState.runId;
     if (blankFreshSession && teamTaskStore?.getState) {
       const s = teamTaskStore.getState();
       if (

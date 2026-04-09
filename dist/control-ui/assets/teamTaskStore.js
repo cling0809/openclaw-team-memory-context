@@ -1313,6 +1313,8 @@ function syncFromSessions(sessionsInput, options = {}) {
           lastActivityAt,
           summary,
           _missingRounds: 0,
+          _firstMissingAt: 0,
+          _seenInSessions: true,
         };
         if (summary && (!existing.resultDigest || existing.summary !== summary)) {
           updated.resultDigest = summarize(summary);
@@ -1334,6 +1336,8 @@ function syncFromSessions(sessionsInput, options = {}) {
         error: currStatus === 'failed' ? pickSessionText(sess?.error, sess?.lastError) : '',
         lastActivityAt,
         _missingRounds: 0,
+        _firstMissingAt: 0,
+        _seenInSessions: true,
         // Tranche 1 新增 child 字段
         needsRework: false,
         failedBy: null,
@@ -1421,16 +1425,23 @@ function syncFromSessions(sessionsInput, options = {}) {
       if (updatedKeys.has(child.sessionKey)) return [];
       const currentStatus = normalizeStatus(child.status);
       if (isTerminalChildStatus(currentStatus)) {
-        return [{ ...child, _missingRounds: 0 }];
+        return [{ ...child, _missingRounds: 0, _firstMissingAt: 0 }];
       }
 
       const missingRounds = Math.max(0, Number(child?._missingRounds || 0)) + 1;
       const summaryText = pickSessionText(child?.summary, child?.resultDigest);
       const lastSeenAt = Math.max(0, Number(child?.lastActivityAt || 0));
-      const recentlySeen = lastSeenAt > 0 && (now - lastSeenAt) < 6500;
-      const shouldPromoteTerminal = !recentlySeen && missingRounds >= 3;
+      const firstMissingAt = Math.max(0, Number(child?._firstMissingAt || 0)) || now;
+      const seenInSessions = Boolean(child?._seenInSessions);
+      const recentlySeen = lastSeenAt > 0 && (now - lastSeenAt) < 15000;
+      const missingForMs = now - firstMissingAt;
+      const requiredMissingMs = seenInSessions ? 90000 : 5 * 60 * 1000;
+      const requiredMissingRounds = seenInSessions ? 6 : 30;
+      const shouldPromoteTerminal = !recentlySeen
+        && missingRounds >= requiredMissingRounds
+        && missingForMs >= requiredMissingMs;
       if (!shouldPromoteTerminal) {
-        return [{ ...child, _missingRounds: missingRounds }];
+        return [{ ...child, _missingRounds: missingRounds, _firstMissingAt: firstMissingAt }];
       }
 
       const terminalStatus = currentStatus === 'failed'
@@ -1466,8 +1477,9 @@ function syncFromSessions(sessionsInput, options = {}) {
           : terminalStatus === 'failed'
             ? (child.error || '执令受阻')
           : child.error,
-        lastActivityAt: now,
+        lastActivityAt: lastSeenAt || now,
         _missingRounds: missingRounds,
+        _firstMissingAt: firstMissingAt,
       }];
     });
     const mergedChildren = sessionReset ? updatedChildren : [...updatedChildren, ...carriedChildren];
