@@ -45,11 +45,19 @@
 
 要求：Node 22.12+，推荐 Node 24。
 
+重要：
+
+- 以下命令都要在仓库根目录执行。
+- 要使用这套“不良人公开版”，必须走 `pnpm public:*` 这组包装命令。
+- 不要直接运行原生 `openclaw onboard`、`openclaw gateway`、`openclaw dashboard`。
+- 如果直接用原生 `openclaw` 命令，运行时通常会回到你机器上默认的 `~/.openclaw` 配置，子 agent 也会退化成通用 `A / B / C` 或普通 role agent，而不是这套天罡席位。
+
 ```bash
 git clone git@github.com:cling0809/openclaw-team-memory-context.git
 cd openclaw-team-memory-context
 pnpm install
 
+# 只用公开版包装命令，不要直接用原生 openclaw 命令
 pnpm public:setup
 pnpm public:onboard
 pnpm public:gateway
@@ -65,10 +73,22 @@ pnpm public:dashboard
 - `public:onboard` 会自动带上本地状态目录、模板配置和本仓库的 `workspace/` 路径。
 - `public:gateway` 会用同一套本地配置启动 Gateway。
 - `public:dashboard` 会打印当前公开版实例的 dashboard URL，并自动在浏览器打开。
+- 这 4 步执行完后，运行时会明确落在仓库内的 `.openclaw-public/`，而不是你机器上原本的 `~/.openclaw/`。
+- 只有这样启动，公开版里的天罡身份、右侧总谱、团队派工和角色工作区骨架才会真正生效。
 - `oc-web` 是 `public:dashboard` 的公开版别名；在仓库里可直接用 `pnpm oc-web`，全局安装后可直接执行 `oc-web`。
 - `public:token` 会打印当前公开版实例使用的 gateway token，便于首次连接 Control UI。
 - `public:devices:list` 和 `public:devices:approve` 用来处理复用旧浏览器状态时残留的配对请求。
 - `public:refresh` 会用最新公开模板重写本地 `.openclaw-public/openclaw.json` 和角色工作区骨架，适合拉到新版本后刷新体验。
+
+错误示例：
+
+```bash
+openclaw onboard
+openclaw gateway
+openclaw dashboard
+```
+
+上面这样跑，通常不会进入这份公开版生成的 `.openclaw-public/`，而是回到你机器自己的默认运行态；这也是别人 clone 后仍然看到通用子代理、看不到完整天罡席位的最常见原因。
 
 是否可以直接用：
 
