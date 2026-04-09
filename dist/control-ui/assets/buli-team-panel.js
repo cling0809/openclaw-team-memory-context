@@ -1,3 +1,5 @@
+import { teamTaskStore, syncFromSessions, getTimeline } from "./teamTaskStore.js";
+
 const PANEL_ID = "buli-team-panel";
 
 // ── 不良人总谱 · 席位映射（从 teamTaskStore.js 统一读取） ──────────────────────
@@ -130,30 +132,6 @@ function formatSeatLastTs(ca) {
   return `${Math.floor(diff / 3600000)}小时前`;
 }
 
-// teamTaskStore: Observable Store
-// P0-a-3: 防御性等待 window.__teamTaskStore 就绪（最多 3 次 × 100ms）
-let __teamStore = null;
-let __storeAttempts = 0;
-while (__storeAttempts < 3 && __teamStore === null) {
-  __teamStore = window.__teamTaskStore ?? null;
-  if (__teamStore === null && __storeAttempts < 2) {
-    const sync = window.__teamTaskStore; // 触发同步访问后再检测
-    if (sync === undefined) {
-      // 使用 MessageChannel 做最小化等待（约 100ms）
-      const mc = new MessageChannel();
-      mc.port1.onmessage = () => {};
-      mc.port2.postMessage('');
-    }
-  }
-  __storeAttempts++;
-}
-if (__teamStore === null) {
-  // store 可能晚于 panel 注入；这里保持静默，后续轮询会自动接管。
-}
-const __teamHelpers = window.__teamTaskHelpers ?? null;
-const teamTaskStore = __teamStore;
-const syncFromSessions = __teamHelpers?.syncFromSessions ?? null;
-const getTimeline = __teamHelpers?.getTimeline ?? null;
 const STORAGE_KEY = "openclaw.bulieren.panel.v2";
 
 // ── 实时活动追踪器 (借鉴 Claude Code ProgressTracker / AgentProgressLine) ────

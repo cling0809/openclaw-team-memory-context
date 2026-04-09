@@ -1,3 +1,5 @@
+import { teamTaskStore, pushTimelineEvent } from "./teamTaskStore.js";
+
 const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409d";
 const COMPOSER_MODE_KEY = "openclaw:workbench:composer-mode:v1";
 const DEFAULT_MODE = "agent";
@@ -202,11 +204,11 @@ function syncModeControls() {
 }
 
 function getTeamStore() {
-  return window.__teamTaskStore;
+  return teamTaskStore;
 }
 
 function getTeamHelpers() {
-  return window.__teamTaskHelpers;
+  return { pushTimelineEvent };
 }
 
 function clearTeamEnforcement() {
