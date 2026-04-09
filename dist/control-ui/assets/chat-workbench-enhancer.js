@@ -1,12 +1,13 @@
 import { teamTaskStore, pushTimelineEvent } from "./teamTaskStore.js";
 
-const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409e";
+const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409f";
 const COMPOSER_MODE_KEY = "openclaw:workbench:composer-mode:v1";
 const DEFAULT_MODE = "agent";
 const VALID_MODES = new Set(["agent", "team"]);
 const RESET_COMMAND_RE = /^\/(?:new|reset)\b/i;
+const TEAM_DISPATCH_MARKER = "【TEAM_MODE_DISPATCH】";
 const TEAM_ENFORCEMENT_MARKER = "【TEAM_MODE_ENFORCEMENT】";
-const TEAM_ENFORCEMENT_GRACE_MS = 1400;
+const TEAM_ENFORCEMENT_GRACE_MS = 8000;
 
 const STATE = {
   mode: readStoredMode(),
@@ -495,7 +496,23 @@ function buildTeamEnforcementMessage(originalMessage) {
     "你当前处于 Agent Team 强制模式。",
     "上一轮没有先实际派出任何子代理，已违反团队模式。",
     "现在必须重新执行：先实际派出至少 1 名子代理（如 sessions_spawn 或 subagents spawn）；复杂任务默认派出 2-3 名并明确分工。",
+    "注意：memory_search、memory_get、总结、规划都不算实际派工；在拿到真实派工结果前不得停在统筹说明。",
     "在出现实际派工结果前，不得直接给出最终结论、总结或单兵完成答案。",
+    "",
+    "原始用户任务：",
+    task,
+  ].join("\n");
+}
+
+function buildTeamDispatchMessage(originalMessage) {
+  const task = normalizeText(originalMessage);
+  return [
+    TEAM_DISPATCH_MARKER,
+    "你当前处于 Agent Team 强制模式。",
+    "本轮第一目标不是先总结，也不是先查记忆，而是先实际派出子代理。",
+    "硬约束：本轮第一轮回复里必须实际调用 sessions_spawn 或 subagents spawn，至少派出 2 名子代理，并为每名子代理写清楚独立任务。",
+    "禁止把 memory_search、memory_get、检索旧战报、口头拆解、分工文案，当作实际派工。",
+    "在真实派工成功之前，不得结束本轮，也不得给出最终分析结论。",
     "",
     "原始用户任务：",
     task,
@@ -617,24 +634,42 @@ function patchSendPipeline(app) {
     const outgoing =
       typeof messageOverride === "string" ? messageOverride : normalizeText(this.chatMessage);
     const normalizedOutgoing = normalizeText(outgoing);
+    const isDispatchMessage = normalizedOutgoing.startsWith(TEAM_DISPATCH_MARKER);
     const isEnforcementMessage = normalizedOutgoing.startsWith(TEAM_ENFORCEMENT_MARKER);
     if (RESET_COMMAND_RE.test(outgoing)) {
       resetTeamDispatch(this, "新对话已开启 · 总谱归档完毕");
     }
+    let nextMessageOverride = messageOverride;
     if (STATE.mode === "team") {
-      if (!isEnforcementMessage && normalizedOutgoing && !normalizedOutgoing.startsWith("/")) {
+      if (!isEnforcementMessage && !isDispatchMessage && normalizedOutgoing && !normalizedOutgoing.startsWith("/")) {
         STATE.enforcement = {
           sessionKey: normalizeText(this.sessionKey) || "main",
           originalMessage: normalizedOutgoing,
           startedAt: Date.now(),
           correctedAt: 0,
         };
+        nextMessageOverride = buildTeamDispatchMessage(normalizedOutgoing);
       }
-      applyTeamDispatch(this, isEnforcementMessage ? STATE.enforcement?.originalMessage || outgoing : outgoing);
+      applyTeamDispatch(
+        this,
+        isEnforcementMessage || isDispatchMessage
+          ? STATE.enforcement?.originalMessage || outgoing
+          : outgoing,
+      );
     } else {
       clearTeamEnforcement();
     }
-    return original.call(this, messageOverride, opts);
+    // The original handleSendChat only clears chatMessage when messageOverride is null/undefined.
+    // In team mode, nextMessageOverride is always a string (the dispatch-wrapped version),
+    // so we must explicitly clear here. Only clear when nextMessageOverride was built from
+    // this.chatMessage (i.e., nextMessageOverride != messageOverride originally passed in).
+    const shouldClear = typeof nextMessageOverride === "string" && nextMessageOverride && nextMessageOverride !== messageOverride;
+    return original.call(this, nextMessageOverride, opts).finally(() => {
+      if (shouldClear) {
+        this.chatMessage = "";
+        this.chatAttachments = [];
+      }
+    });
   };
   app.__OPENCLAW_WORKBENCH_PATCH__ = WORKBENCH_ENHANCER_VERSION;
 }

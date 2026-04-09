@@ -1008,6 +1008,7 @@ function buildStatusBar() {
 
 /**
  * Tranche 14: 更新运行状态条
+ * Tranche 15 fix: 状态条 agent 名跟随 live child（与 team panel header 逻辑对齐）
  */
 function updateStatusBar(app, archiveRuntime = null) {
   const bar = qs('.buli-status-bar', getApp() || document);
@@ -1018,7 +1019,9 @@ function updateStatusBar(app, archiveRuntime = null) {
   const sessionSnapshot = archiveRuntime?.snapshot || pickSessionSnapshot(app?.sessionsResult, app?.sessionKey || state?.sessionKey || '');
   const pressureMeta = getArchivePressureMeta(sessionSnapshot, state?.contextPressure ?? 0);
   const isRunning = !!(app?.chatRunId);
-  const anyActive = activity.isActive || isRunning || activity.isStreaming;
+  const children = Array.isArray(state?.children) ? state.children : [];
+  const liveChildren = children.filter(c => getChildDisplayStatus(c) === 'live');
+  const anyActive = activity.isActive || isRunning || activity.isStreaming || liveChildren.length > 0;
 
   bar.classList.toggle('active', anyActive || pressureMeta.state === 'warm' || pressureMeta.warn);
 
@@ -1029,9 +1032,13 @@ function updateStatusBar(app, archiveRuntime = null) {
   const statsEl = qs('.buli-status-stats', bar);
 
   if (agentEl) {
-    const agentName = state?.currentWorker
-      ? getSeatDisplay(state.currentWorker)
-      : (app?.agentId ? getSeatDisplay(app.agentId) : '不良帅');
+    // 优先用 live child（与 team panel header 对齐），其次用 currentWorker，最后才用 main
+    const leadLiveChild = liveChildren[0] || null;
+    const agentName = leadLiveChild?.agentId
+      ? getSeatDisplay(leadLiveChild.agentId)
+      : state?.currentWorker
+        ? getSeatDisplay(state.currentWorker)
+        : (app?.agentId ? getSeatDisplay(app.agentId) : '不良帅');
     agentEl.textContent = anyActive ? agentName : '候令';
   }
 
@@ -1692,7 +1699,7 @@ function collectRenderableTextFragments(message, out = []) {
     if (!text || isInternalChatControlText(text)) return;
     if (message.role === 'toolResult') {
       const toolName = String(message.toolName || '').trim().toLowerCase();
-      if (toolName && !toolName.startsWith('sessions_') && !CHAT_TEAM_SIGNAL_RE.test(text)) {
+      if (toolName && toolName !== 'sessions_spawn' && toolName !== 'sessions_yield' && toolName !== 'subagents') {
         return;
       }
     }
@@ -1888,6 +1895,30 @@ function parseToolResultJsonObjects(message) {
   return objects;
 }
 
+function messageHasRealDispatchEvidence(message) {
+  if (!message || typeof message !== 'object') return false;
+  if (Array.isArray(message.content) && message.content.some(isSpawnToolCallBlock)) {
+    return true;
+  }
+  if (message.role !== 'toolResult') return false;
+  const toolName = String(message.toolName || '').trim().toLowerCase();
+  if (toolName === 'sessions_spawn') {
+    return !!extractSpawnResultSessionKey(message);
+  }
+  if (toolName === 'subagents') {
+    const payloads = parseToolResultJsonObjects(message);
+    return payloads.some((payload) => {
+      if (!payload || typeof payload !== 'object') return false;
+      if (String(payload?.action || '').trim().toLowerCase() === 'spawn') return true;
+      const rows = []
+        .concat(Array.isArray(payload?.active) ? payload.active : [])
+        .concat(Array.isArray(payload?.recent) ? payload.recent : []);
+      return rows.some((row) => String(row?.sessionKey || row?.childSessionKey || '').trim());
+    });
+  }
+  return false;
+}
+
 function selectRelevantTeamMessages(messages) {
   const list = Array.isArray(messages) ? messages.filter(Boolean) : [];
   if (list.length === 0) return [];
@@ -1926,7 +1957,8 @@ function deriveTeamStateFromMessageList(messages) {
   });
   const joinedText = textPool.join('\n');
   const hasSpawnToolCall = relevantMessages.some((msg) => Array.isArray(msg?.content) && msg.content.some(isSpawnToolCallBlock));
-  if (!CHAT_TEAM_SIGNAL_RE.test(joinedText) && !hasSpawnToolCall) {
+  const hasRealDispatchEvidence = relevantMessages.some((msg) => messageHasRealDispatchEvidence(msg));
+  if (!CHAT_TEAM_SIGNAL_RE.test(joinedText) && !hasSpawnToolCall && !hasRealDispatchEvidence) {
     return null;
   }
 
@@ -2095,6 +2127,10 @@ function deriveTeamStateFromMessageList(messages) {
       latestOverallDoneOrder = order;
     }
 
+    if (!hasRealDispatchEvidence) {
+      return;
+    }
+
     const tableParts = line
       .split('|')
       .map((part) => String(part || '').trim())
@@ -2221,7 +2257,7 @@ function deriveTeamStateFromMessageList(messages) {
   return {
     objective: objective || '团队军令执行中',
     currentObjectiveDigest: objective || '团队军令执行中',
-    phase: liveChildren.length > 0 ? 'executing' : (queuedChildren.length > 0 ? 'planning' : ''),
+    phase: liveChildren.length > 0 ? 'executing' : ((queuedChildren.length > 0 || !hasRealDispatchEvidence) ? 'planning' : ''),
     currentWorker: liveChildren[0]?.agentId || null,
     children,
   };
