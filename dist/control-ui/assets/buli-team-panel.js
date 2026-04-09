@@ -1686,6 +1686,39 @@ function collectTextFragmentsDeep(input, out = [], depth = 0, seen = new WeakSet
   return out;
 }
 
+function isInternalChatControlText(text) {
+  const value = String(text || '').trim();
+  if (!value) return true;
+  if (value.includes(CHAT_TEAM_ENFORCEMENT_MARKER)) return true;
+  if (/BEGIN_OPENCLAW_INTERNAL_CONTEXT|END_OPENCLAW_INTERNAL_CONTEXT/.test(value)) return true;
+  if (/^NO_REPLY$/i.test(value)) return true;
+  return false;
+}
+
+function collectRenderableTextFragments(message, out = []) {
+  if (!message || typeof message !== 'object') return out;
+  const blocks = Array.isArray(message.content) ? message.content : [];
+  if (blocks.length === 0) {
+    const raw = compactMultilineText(message.text || '', 2400);
+    if (raw && !isInternalChatControlText(raw)) out.push(raw);
+    return out;
+  }
+  blocks.forEach((block) => {
+    if (!block || typeof block !== 'object') return;
+    if (block.type !== 'text') return;
+    const text = compactMultilineText(block.text || '', 2400);
+    if (!text || isInternalChatControlText(text)) return;
+    if (message.role === 'toolResult') {
+      const toolName = String(message.toolName || '').trim().toLowerCase();
+      if (toolName && !toolName.startsWith('sessions_') && !CHAT_TEAM_SIGNAL_RE.test(text)) {
+        return;
+      }
+    }
+    out.push(text);
+  });
+  return out;
+}
+
 function resolveAgentIdFromSeatLabel(label) {
   const text = String(label || '').trim();
   if (!text) return '';
@@ -1721,6 +1754,7 @@ function normalizeChatDerivedStatus(text) {
 }
 
 const CHAT_TEAM_SIGNAL_RE = /(sessions_spawn|sessions_yield|天罡|子代理|子会话|派工|分派|军令|分道齐进|并进|回呈|回传|超时|失联|折损|扫描|研究|评审|汇总)/;
+const CHAT_TEAM_ENFORCEMENT_MARKER = "【TEAM_MODE_ENFORCEMENT】";
 const CHAT_SEAT_RE = /(不良帅(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?|天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?)/g;
 const CHAT_OVERALL_DONE_RE = /(全部回传|悉数回传|均已回传|回传完毕|军情汇总完毕|汇总完毕|裁断结束|评审完毕|结案|全部完成|任务完成)/;
 
@@ -1752,29 +1786,138 @@ function collectChatSurfaceMessages(limit = 18) {
   return messages;
 }
 
+function isMeaningfulUserObjectiveMessage(message) {
+  if (!message || typeof message !== 'object' || message.role !== 'user') return false;
+  const text = collectRenderableTextFragments(message, [])
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+  if (!text) return false;
+  if (/^\/(?:new|reset)\b/i.test(text)) return false;
+  if (/^A new session was started via \/new or \/reset/i.test(text)) return false;
+  return true;
+}
+
+function messageHasTeamSignal(message) {
+  if (!message || typeof message !== 'object') return false;
+  if (Array.isArray(message.content) && message.content.some((block) => (
+    block && typeof block === 'object' && block.type === 'toolCall' && /^sessions_spawn$/i.test(String(block.name || '').trim())
+  ))) {
+    return true;
+  }
+  const text = collectRenderableTextFragments(message, [])
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join('\n');
+  return !!text && CHAT_TEAM_SIGNAL_RE.test(text);
+}
+
+function parseSpawnTaskDescriptor(taskText, labelText = '') {
+  const raw = compactMultilineText(taskText || '', 3200);
+  const lines = String(raw || '')
+    .split(/\n+/)
+    .map((line) => String(line || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  const firstLine = lines[0] || '';
+  let seatLabel = extractSeatLabelsFromLine(firstLine)[0] || extractSeatLabelsFromLine(raw)[0] || '';
+  if (!seatLabel) {
+    const whoMatch = firstLine.match(/^你是([^，,。]+)/);
+    if (whoMatch) seatLabel = String(whoMatch[1] || '').trim();
+  }
+  let taskSummary = '';
+  const dutyMatch = firstLine.match(/负责([^。；\n]+)/);
+  if (dutyMatch) taskSummary = String(dutyMatch[1] || '').trim();
+  if (!taskSummary) {
+    const likelyTask = lines.find((line) => /(?:扫描|分析|审查|评估|对比|汇总|检视|搜索)/.test(line));
+    if (likelyTask) {
+      taskSummary = likelyTask
+        .replace(/^[-•*\d.\s]+/, '')
+        .replace(/^你的任务[:：]\s*/i, '')
+        .trim();
+    }
+  }
+  if (!taskSummary) taskSummary = normalizeText(labelText) || '执行中，待回传';
+  return {
+    seatLabel,
+    agentId: resolveAgentIdFromSeatLabel(seatLabel) || '',
+    taskSummary: compactText(taskSummary, 96),
+  };
+}
+
+function extractSpawnResultSessionKey(message) {
+  if (!message || typeof message !== 'object') return '';
+  const texts = [];
+  collectRenderableTextFragments(message, texts);
+  for (const text of texts) {
+    const value = String(text || '').trim();
+    if (!value) continue;
+    try {
+      const parsed = JSON.parse(value);
+      const childSessionKey = String(parsed?.childSessionKey || '').trim();
+      if (childSessionKey) return childSessionKey;
+    } catch {}
+    const match = value.match(/"childSessionKey"\s*:\s*"([^"]+)"/);
+    if (match) return String(match[1] || '').trim();
+  }
+  return '';
+}
+
+function selectRelevantTeamMessages(messages) {
+  const list = Array.isArray(messages) ? messages.filter(Boolean) : [];
+  if (list.length === 0) return [];
+
+  let lastTeamIndex = -1;
+  for (let index = list.length - 1; index >= 0; index -= 1) {
+    if (messageHasTeamSignal(list[index])) {
+      lastTeamIndex = index;
+      break;
+    }
+  }
+  if (lastTeamIndex < 0) {
+    return list.slice(-80);
+  }
+
+  let startIndex = 0;
+  for (let index = lastTeamIndex; index >= 0; index -= 1) {
+    const current = list[index];
+    if (isMeaningfulUserObjectiveMessage(current)) {
+      startIndex = index;
+      break;
+    }
+  }
+
+  return list.slice(startIndex);
+}
+
 function deriveTeamStateFromMessageList(messages) {
   if (!Array.isArray(messages) || messages.length === 0) return null;
 
+  const relevantMessages = selectRelevantTeamMessages(messages);
+  if (relevantMessages.length === 0) return null;
   const textPool = [];
-  messages.slice(-36).forEach((msg) => {
-    collectTextFragmentsDeep(msg, textPool);
+  relevantMessages.forEach((msg) => {
+    collectRenderableTextFragments(msg, textPool);
   });
   const joinedText = textPool.join('\n');
-  if (!CHAT_TEAM_SIGNAL_RE.test(joinedText)) {
+  const hasSpawnToolCall = relevantMessages.some((msg) => Array.isArray(msg?.content) && msg.content.some((block) => (
+    block && typeof block === 'object' && block.type === 'toolCall' && /^sessions_spawn$/i.test(String(block.name || '').trim())
+  )));
+  if (!CHAT_TEAM_SIGNAL_RE.test(joinedText) && !hasSpawnToolCall) {
     return null;
   }
 
   let objective = '';
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    const msg = messages[i];
+  for (let i = relevantMessages.length - 1; i >= 0; i -= 1) {
+    const msg = relevantMessages[i];
     if (msg?.role !== 'user') continue;
-    const parts = collectTextFragmentsDeep(msg, [])
+    const parts = collectRenderableTextFragments(msg, [])
       .map((part) => String(part || '').trim())
       .filter((part) => {
         if (!part) return false;
         if (/^\/(?:new|reset)\b/i.test(part)) return false;
         if (/^A new session was started via \/new or \/reset/i.test(part)) return false;
-        if (/BEGIN_OPENCLAW_INTERNAL_CONTEXT|END_OPENCLAW_INTERNAL_CONTEXT/.test(part)) return false;
+        if (isInternalChatControlText(part)) return false;
         return true;
       });
     objective = firstMeaningfulText(...parts);
@@ -1799,10 +1942,14 @@ function deriveTeamStateFromMessageList(messages) {
   };
 
   const childrenByAgent = new Map();
-  const upsertChild = (seatLabel, taskText, statusText, order) => {
-    const seat = String(seatLabel || '').trim();
+  const upsertChild = (seatLabel, taskText, statusText, order, options = {}) => {
+    const seat = String(seatLabel || options.seatLabel || '').trim();
     if (!seat) return;
-    const agentId = resolveAgentIdFromSeatLabel(seat);
+    const agentId = String(options.agentId || resolveAgentIdFromSeatLabel(seat) || '').trim();
+    const isCanonicalSeat = /^天[\u4e00-\u9fff]{1,3}星(?:·[\u4e00-\u9fffA-Za-z0-9_-]{1,16})?$/.test(seat)
+      || /^(?:不良帅|不良帅·李星云(?:（天暗星）)?)$/.test(seat)
+      || !!agentId;
+    if (!isCanonicalSeat) return;
     const key = agentId || seat;
     const prev = childrenByAgent.get(key) || null;
     const task = compactText(String(taskText || '').trim(), 72);
@@ -1821,7 +1968,10 @@ function deriveTeamStateFromMessageList(messages) {
         (nextIsTerminal && !prevIsTerminal)
       ));
     const mergedStatus = shouldTakeStatus ? nextStatus : (prevStatus || nextStatus);
-    const mergedTask = task || prev?.taskSummary || prev?.task || '';
+    const keepExistingTask = Boolean(prev?._lockTaskSummary) && !options.lockTaskSummary;
+    const mergedTask = keepExistingTask
+      ? (prev?.taskSummary || prev?.task || task)
+      : (task || prev?.taskSummary || prev?.task || '');
     const derivedTerminalSummary = nextStatus === 'done' ? mergedTask : '';
     const derivedTerminalError = ['failed', 'timed_out', 'aborted'].includes(nextStatus)
       ? compactText(statusTextNorm || mergedTask || '', 160)
@@ -1830,7 +1980,7 @@ function deriveTeamStateFromMessageList(messages) {
       ...(prev || {}),
       agentId: agentId || seat,
       role: agentId || seat,
-      sessionKey: prev?.sessionKey || '',
+      sessionKey: String(options.sessionKey || prev?.sessionKey || '').trim(),
       status: mergedStatus,
       taskSummary: mergedTask,
       summary: nextStatus === 'done'
@@ -1841,10 +1991,42 @@ function deriveTeamStateFromMessageList(messages) {
       runtimeStatus: mergedStatus,
       lastActivityAt: Date.now(),
       _derivedFromChat: true,
+      _lockTaskSummary: Boolean(prev?._lockTaskSummary || options.lockTaskSummary),
       _statusOrder: shouldTakeStatus ? order : Number(prev?._statusOrder || order),
       _lineOrder: order,
     });
   };
+
+  const pendingSpawnByCallId = new Map();
+  relevantMessages.forEach((msg, messageOrder) => {
+    if (Array.isArray(msg?.content)) {
+      msg.content.forEach((block, blockIndex) => {
+        if (!block || typeof block !== 'object') return;
+        if (block.type !== 'toolCall' || !/^sessions_spawn$/i.test(String(block.name || '').trim())) return;
+        const parsed = parseSpawnTaskDescriptor(block.arguments?.task, block.arguments?.label);
+        if (!parsed.seatLabel) return;
+        const order = messageOrder * 100 + blockIndex;
+        upsertChild(parsed.seatLabel, parsed.taskSummary, '候令', order, {
+          agentId: parsed.agentId,
+          lockTaskSummary: true,
+        });
+        pendingSpawnByCallId.set(String(block.id || `${messageOrder}:${blockIndex}`), {
+          ...parsed,
+          order,
+        });
+      });
+    }
+    if (msg?.role === 'toolResult') {
+      const pending = pendingSpawnByCallId.get(String(msg.toolCallId || '').trim());
+      if (!pending) return;
+      const childSessionKey = extractSpawnResultSessionKey(msg);
+      upsertChild(pending.seatLabel, pending.taskSummary, '候令', pending.order, {
+        agentId: pending.agentId,
+        sessionKey: childSessionKey || '',
+        lockTaskSummary: true,
+      });
+    }
+  });
 
   let latestObjectiveLine = '';
   let latestOverallDoneOrder = -1;
@@ -1997,7 +2179,7 @@ const CHAT_DERIVED_CACHE = {
 
 function buildChatMessageSignature(messages) {
   const list = Array.isArray(messages) ? messages : [];
-  const tail = list.slice(-4).map((message) => {
+  const tail = list.slice(-8).map((message) => {
     const role = String(message?.role || '').trim();
     const text = collectTextFragmentsDeep(message, [])
       .join('\n')
@@ -2006,6 +2188,49 @@ function buildChatMessageSignature(messages) {
     return `${role}:${text}`;
   }).join('|');
   return `${list.length}|${tail}`;
+}
+
+function normalizeMessageTimestamp(message, fallback = 0) {
+  if (!message || typeof message !== 'object') return fallback;
+  const values = [
+    message.timestamp,
+    message.ts,
+    message.startedAt,
+    message.updatedAt,
+    message.createdAt,
+  ];
+  for (const value of values) {
+    const num = Number(value || 0);
+    if (Number.isFinite(num) && num > 0) return num;
+  }
+  return fallback;
+}
+
+function collectAppChatMessages(app) {
+  const entries = [];
+  let sequence = 0;
+  const appendMessages = (messages, source) => {
+    if (!Array.isArray(messages)) return;
+    messages.forEach((message, index) => {
+      if (!message || typeof message !== 'object') return;
+      entries.push({
+        message,
+        source,
+        index,
+        sequence: sequence++,
+        timestamp: normalizeMessageTimestamp(message, 0),
+      });
+    });
+  };
+  appendMessages(app?.chatMessages, 'chat');
+  appendMessages(app?.chatToolMessages, 'tool');
+  entries.sort((left, right) => {
+    const leftTs = Number(left?.timestamp || 0);
+    const rightTs = Number(right?.timestamp || 0);
+    if (leftTs !== rightTs) return leftTs - rightTs;
+    return Number(left?.sequence || 0) - Number(right?.sequence || 0);
+  });
+  return entries.map((entry) => entry.message);
 }
 
 function buildChatSurfaceSignature(limit = 10) {
@@ -2025,13 +2250,18 @@ function buildChatSurfaceSignature(limit = 10) {
 }
 
 function deriveTeamStateFromChatMessages(app) {
-  const messageSignature = buildChatMessageSignature(Array.isArray(app?.chatMessages) ? app.chatMessages : []);
+  const chatMessages = Array.isArray(app?.chatMessages) ? app.chatMessages : [];
+  const toolMessages = Array.isArray(app?.chatToolMessages) ? app.chatToolMessages : [];
+  const combinedMessages = collectAppChatMessages(app);
+  const messageSignature = buildChatMessageSignature(combinedMessages);
   const domSignature = buildChatSurfaceSignature();
   const signature = `${String(app?.sessionKey || '')}|${String(app?.chatRunId || '')}|${messageSignature}|${domSignature}`;
   if (CHAT_DERIVED_CACHE.signature === signature) {
     return CHAT_DERIVED_CACHE.value;
   }
-  const messageDerived = deriveTeamStateFromMessageList(Array.isArray(app?.chatMessages) ? app.chatMessages : []);
+  const messageDerived = deriveTeamStateFromMessageList(chatMessages);
+  const toolDerived = deriveTeamStateFromMessageList(toolMessages);
+  const combinedDerived = deriveTeamStateFromMessageList(combinedMessages);
   const domDerived = deriveTeamStateFromMessageList(collectChatSurfaceMessages());
   const score = (state) => {
     if (!state) return -1;
@@ -2040,7 +2270,10 @@ function deriveTeamStateFromChatMessages(app) {
     const objectiveScore = String(state.currentObjectiveDigest || state.objective || '').trim() ? 2 : 0;
     return children * 10 + live * 2 + objectiveScore;
   };
-  const best = score(domDerived) >= score(messageDerived) ? domDerived : messageDerived;
+  const candidates = [combinedDerived, toolDerived, domDerived, messageDerived];
+  const best = candidates.reduce((selected, candidate) => (
+    score(candidate) >= score(selected) ? candidate : selected
+  ), null);
   CHAT_DERIVED_CACHE.signature = signature;
   CHAT_DERIVED_CACHE.value = best;
   return best;

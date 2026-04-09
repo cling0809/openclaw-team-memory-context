@@ -1,4 +1,4 @@
-const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409c";
+const WORKBENCH_ENHANCER_VERSION = "personal-workbench-enhancer-20260409d";
 const COMPOSER_MODE_KEY = "openclaw:workbench:composer-mode:v1";
 const DEFAULT_MODE = "agent";
 const VALID_MODES = new Set(["agent", "team"]);
@@ -310,6 +310,53 @@ function collectRecentAssistantSurfaceText(limit = 12) {
     .join("\n");
 }
 
+function getMessageTimestamp(message) {
+  const values = [
+    message?.timestamp,
+    message?.ts,
+    message?.startedAt,
+    message?.updatedAt,
+    message?.createdAt,
+  ];
+  for (const value of values) {
+    const num = Number(value || 0);
+    if (Number.isFinite(num) && num > 0) {
+      return num;
+    }
+  }
+  return 0;
+}
+
+function hasStructuredDispatchEvidence(app, sinceTs = 0) {
+  const messages = Array.isArray(app?.chatMessages) ? app.chatMessages : [];
+  for (const message of messages) {
+    const timestamp = getMessageTimestamp(message);
+    if (sinceTs > 0 && timestamp > 0 && timestamp + 50 < sinceTs) {
+      continue;
+    }
+    if (Array.isArray(message?.content) && message.content.some((block) => (
+      block &&
+      typeof block === "object" &&
+      block.type === "toolCall" &&
+      /^sessions_spawn$/i.test(String(block.name || "").trim())
+    ))) {
+      return true;
+    }
+    if (message?.role === "toolResult") {
+      const contentText = Array.isArray(message.content)
+        ? message.content
+            .filter((block) => block && typeof block === "object" && block.type === "text")
+            .map((block) => normalizeText(block.text))
+            .join("\n")
+        : "";
+      if (/childSessionKey/i.test(contentText) || /"status"\s*:\s*"accepted"/i.test(contentText)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function hasScopedTeamChildren(app) {
   const store = getTeamStore();
   const snapshot = typeof store?.getState === "function" ? store.getState() : null;
@@ -360,8 +407,11 @@ function hasScopedTeamChildren(app) {
   });
 }
 
-function hasTeamDispatchEvidence(app) {
+function hasTeamDispatchEvidence(app, sinceTs = 0) {
   if (hasScopedTeamChildren(app)) {
+    return true;
+  }
+  if (hasStructuredDispatchEvidence(app, sinceTs)) {
     return true;
   }
   return TEAM_DISPATCH_EVIDENCE_RE.test(collectRecentAssistantSurfaceText());
@@ -391,7 +441,7 @@ async function enforceTeamMode(app) {
     clearTeamEnforcement();
     return;
   }
-  if (hasTeamDispatchEvidence(app)) {
+  if (hasTeamDispatchEvidence(app, enforcement.startedAt || 0)) {
     clearTeamEnforcement();
     return;
   }
